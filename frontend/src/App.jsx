@@ -26,6 +26,8 @@ import TripDetails from "./pages/TripDetails/TripDetails";
 import Profile
 from "./pages/Profile/Profile";
 
+import Home from "./pages/Home/Home";
+
 function App() {
 
   return (
@@ -35,14 +37,10 @@ function App() {
       <BrowserRouter>
 
         <Routes>
-          <Route
+
+           <Route
             path="/"
-            element={
-              <Navigate
-                to="/login"
-                replace
-              />
-            }
+            element={<Home />}
           />
 
           <Route
