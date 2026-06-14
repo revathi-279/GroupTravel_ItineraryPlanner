@@ -1,0 +1,72 @@
+###
+POST http://localhost:9000/expense/add-expense
+Content-Type: application/json 
+
+{
+    "tripId": "6a1e84c7b4b4ab9ec731388b",
+    "title": "Hotel",
+    "notes": "Krishna paid for 3 members",
+
+    "payers": [
+        {
+            "user": "6a1c19ab0557d2cb2d8234ee",
+            "amount": 15000
+        }
+    ],
+
+    "participants": [
+        "6a1c19ab0557d2cb2d8234ee",
+        "6a1c23fe71d786517271cfdc",
+        "6a1ce2cad05c8bba11083dda"
+    ]
+}
+
+###
+POST http://localhost:9000/expense/add-expense
+Content-Type: application/json 
+
+{
+    "tripId": "6a1e84c7b4b4ab9ec731388b",
+    "title": "Food",
+    "notes": "At Vrindavan Hotel",
+
+    "payers": [
+        {
+            "user": "6a1c23fe71d786517271cfdc",
+            "amount": 1500
+        }
+    ],
+
+    "participants": [
+        "6a1c19ab0557d2cb2d8234ee"
+    ]
+}
+###
+GET http://localhost:9000/expense/get-expenses/6a1e84c7b4b4ab9ec731388b
+
+###
+PATCH http://localhost:9000/expense/update-expense
+Content-Type: application/json 
+
+{
+    "expenseId" : "6a2031dc6aa7537aa269a3c5",
+    "title" : "Vrindavan Hotel",
+      "notes": "Krishna, Radha paid for 3 members",
+        "payers": [
+        {
+            "user": "6a1c19ab0557d2cb2d8234ee",
+            "amount": 15000
+        },
+        {
+            "user": "6a1ce2cad05c8bba11083dda",
+            "amount": 15000
+        }
+    ]
+
+}
+
+###
+DELETE http://localhost:9000/expense/delete-expense/6a20181cad33959fbd3109af
+
+###
+GET http://localhost:9000/expense/expense-summary/6a1e84c7b4b4ab9ec731388b

@@ -1,0 +1,28 @@
+POST http://localhost:9000/notification/send-invitation
+Content-Type: application/json
+
+{
+    "tripId":"6a2994a43cc9862e69240efa",
+    "receiverId":"6a1c23fe71d786517271cfdc"
+}
+
+###
+GET http://localhost:9000/notification/get-notifications
+
+###
+PATCH http://localhost:9000/notification/accept-invitation
+Content-Type: application/json
+
+{
+    "notificationId":"6a2a568092c2ab7c48705f4b"
+}
+
+###
+GET http://localhost:9000/notification/unread-count
+
+###
+###
+PATCH http://localhost:9000/notification/mark-read/6a284fe62a5fdfd3ba92d223
+
+###
+PATCH http://localhost:9000/notification/mark-all-read

@@ -1,0 +1,75 @@
+###
+POST http://localhost:9000/trip/create-trip
+Content-Type: application/json
+
+{
+    "title" : "Krishna conscious trip",
+    "destination" : "Vrindavan",
+    "description" : "Finally going to his Dham",
+    "startDate" : "2026-05-31",
+    "endDate" : "2026-06-10"
+}
+###
+POST http://localhost:9000/trip/create-trip
+Content-Type: application/json
+
+{
+    "title" : "Bhakti trip",
+    "destination" : "Mayapur",
+    "startDate" : "2026-06-02",
+    "endDate" : "2026-06-15"
+}
+
+###
+GET http://localhost:9000/trip/get-trips
+
+###
+GET http://localhost:9000/trip/get-trip/6a1e84c7b4b4ab9ec731388b
+
+###
+PATCH  http://localhost:9000/trip/update-trip
+Content-Type: application/json
+
+{
+    "tripId" :  "6a2994a43cc9862e69240efa",
+    "startDate" : "2026-06-15"
+}
+
+###
+DELETE  http://localhost:9000/trip/delete-trip/6a22b3f284b514a66ccae616
+
+### 
+POST http://localhost:9000/trip/add-member
+Content-Type: application/json
+
+{
+    "tripId" : "6a1e84c7b4b4ab9ec731388b",
+    "email" : "liri@gmail.com"
+}
+
+###
+GET http://localhost:9000/trip/get-members/6a28468a70973fa4ad9b6673
+
+###
+DELETE http://localhost:9000/trip/remove-member/6a2994a43cc9862e69240efa/6a1c23fe71d786517271cfdc
+
+###
+PATCH  http://localhost:9000/trip/add-admin
+Content-Type: application/json
+
+{
+    "tripId" : "6a1e84c7b4b4ab9ec731388b",
+    "memberId" : "6a1ce2cad05c8bba11083dda"
+}
+
+###
+DELETE http://localhost:9000/trip/remove-admin/6a1c23b371d786517271cfdb/6a1c19ab0557d2cb2d8234ee
+
+###
+DELETE http://localhost:9000/trip/leave-trip/6a1d4984acf97a5fb1af46e73
+
+###
+GET http://localhost:9000/trip/statistics/6a28468a70973fa4ad9b6673
+
+###
+GET http://localhost:9000/trip/search?q=i

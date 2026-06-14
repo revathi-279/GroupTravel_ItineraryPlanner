@@ -1,0 +1,63 @@
+POST http://localhost:9000/itinerary/create-itinerary
+Content-Type: application/json 
+
+{
+    "tripId" : "6a1e84c7b4b4ab9ec731388b",
+    "title" : "Boarding Train",
+    "description" : "Must reach station before 5PM",
+    "location": "Cherlapally Railway Station",
+    "dateTime" : "2026-05-31"
+}
+
+###
+POST http://localhost:9000/itinerary/create-itinerary
+Content-Type: application/json 
+
+{
+    "tripId" : "6a1e84c7b4b4ab9ec731388b",
+    "title" : "Reach hotel",
+    "description" : "",
+    "location": "Vrindavan",
+    "dateTime" : "2026-06-02"
+}
+###
+POST http://localhost:9000/itinerary/create-itinerary
+Content-Type: application/json 
+
+{
+    "tripId" : "6a1e84c7b4b4ab9ec731388b",
+    "title" : "Banke Bihari Darshan",
+    "description" : "Reach before Mangala Aarti",
+    "location": "Vrindavan",
+    "dateTime" : "2026-06-03"
+}
+###
+POST http://localhost:9000/itinerary/create-itinerary
+Content-Type: application/json 
+
+{
+    "tripId" : "6a1e84c7b4b4ab9ec731388b",
+    "title" : "Prepare for train departure",
+    "description" : "",
+    "location": "Vrindavan",
+    "dateTime" : "2026-06-10"
+}
+
+###
+GET http://localhost:9000/itinerary/get-itineraries/6a1e84c7b4b4ab9ec731388b
+
+###
+GET http://localhost:9000/itinerary/get-itinerary/6a1e8917bd6802ce27245585
+
+###
+PATCH http://localhost:9000/itinerary/update-itinerary
+Content-Type: application/json 
+
+{
+    "itineraryId" : "6a1eb8cd4a85cfd166ec6580",
+     "status" : "Cancelled"
+
+}
+
+###
+DELETE http://localhost:9000/itinerary/delete-itinerary/6a1eb8cd4a85cfd166ec6580

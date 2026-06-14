@@ -1,0 +1,40 @@
+POST http://localhost:9000/poll/create-poll
+Content-Type: application/json 
+
+{
+    "tripId" : "6a1da1cc37b3c9cbe39f9634",
+    "question" : "Which darshan to take first?",
+    "options" : ["Panchattatva","Radha Madhava","Narasimha Deva"],
+    "allowMultipleVotes": true
+}
+
+###
+POST http://localhost:9000/poll/create-poll
+Content-Type: application/json 
+
+{
+    "tripId" : "6a1da1cc37b3c9cbe39f9634",
+    "question" : "Which transport shall we take dear members?",
+    "options" : ["Auto","Bus","Walk"],
+    "allowMultipleVotes": false
+}
+
+###
+GET http://localhost:9000/poll/get-polls/6a1da1cc37b3c9cbe39f9634
+
+### 
+GET http://localhost:9000/poll/get-poll/6a1dbdda632eccd3d5e6abcd
+
+
+###
+POST http://localhost:9000/poll/vote-poll
+Content-Type: application/json 
+
+{
+    "pollId" : "6a1e66b5a51b8a0ec72d62dc",
+    "optionId" : "6a1e66b5a51b8a0ec72d62dd"
+}
+
+
+###
+DELETE  http://localhost:9000/poll/delete-poll/6a1e66b5a51b8a0ec72d62dc

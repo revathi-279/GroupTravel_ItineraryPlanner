@@ -1,0 +1,100 @@
+POST http://localhost:9000/auth/register
+Content-Type: application/json
+
+{
+   "name" : "Krishna",
+   "email" : "krishna@gmail.com",
+   "password" :  "RadheRadhe"
+}
+
+###
+POST http://localhost:9000/auth/register
+Content-Type: application/json
+
+{
+   "name" : "Revathi",
+   "email" : "revathi@gmail.com",
+   "password" :  "RadheRadhe"
+}
+
+###
+POST http://localhost:9000/auth/register
+Content-Type: application/json
+
+{
+   "name" : "Radha",
+   "email" : "radha@gmail.com",
+   "password" :  "Shyamsundar"
+}
+###
+POST http://localhost:9000/auth/register
+Content-Type: application/json
+
+{
+   "name" : "Rani",
+   "email" : "rani@gmail.com",
+   "password" :  "Shyamsundar"
+}
+
+###
+POST http://localhost:9000/auth/register
+Content-Type: application/json
+
+{
+   "name" : "Liri",
+   "email" : "liri@gmail.com",
+   "password" :  "RadheRadhe"
+}
+
+###
+POST http://localhost:9000/auth/login
+Content-Type: application/json
+
+{
+    "email" : "revathi@gmail.com",
+    "password": "RadheRadhe"
+}
+
+###
+POST http://localhost:9000/auth/login
+Content-Type: application/json
+
+{
+    "email" : "krishna@gmail.com",
+    "password": "RadheRadhe"
+}
+
+###
+POST http://localhost:9000/auth/login
+Content-Type: application/json
+
+{
+    "email" : "radha@gmail.com",
+    "password": "Shyamsundar"
+}
+
+###
+POST http://localhost:9000/auth/login
+Content-Type: application/json
+
+{
+    "email" : "pandu@gmail.com",
+    "password": "123456789"
+}
+###
+GET http://localhost:9000/auth/profile
+
+###
+POST http://localhost:9000/auth/logout
+
+###
+PATCH http://localhost:9000/auth/update-profile
+Content-Type: application/json
+
+{
+     "currentPassword":"RadheRadhe",
+    "newPassword":"123456789"
+}
+
+###
+DELETE http://localhost:9000/auth/delete-account
