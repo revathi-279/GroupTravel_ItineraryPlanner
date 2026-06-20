@@ -216,7 +216,7 @@ export const getGalleryPhotos = async (req, res) => {
             })
                 .populate(
                     "uploadedBy",
-                    "name"
+                    "name profilePicture"
                 )
                 .populate(
                     "reactions.user",

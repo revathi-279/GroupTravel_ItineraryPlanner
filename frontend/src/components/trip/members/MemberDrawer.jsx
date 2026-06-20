@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { theme } from "../../../common/common";
 import { motion } from "framer-motion";
+import {
+  memberService
+}
+from "../../../services/memberService";
 
 // Premium vector assets matching our unified luxury minimal identity ✨
 import { MoreVertical, ShieldCheck, Map, Wallet, BarChart3, Image, X } from "lucide-react";
@@ -18,6 +22,10 @@ const MemberDrawer = ({
   onInvite,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [
+  stats,
+  setStats
+] = useState(null);
 
   // Close context dropdown menu when clicking outside
   useEffect(() => {
@@ -38,6 +46,42 @@ const MemberDrawer = ({
     if (open) window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [open, onClose]);
+
+  useEffect(() => {
+
+  if (!member || !trip)
+    return;
+
+  const loadStats =
+    async () => {
+
+      try {
+
+        const response =
+          await memberService
+            .getMemberStats(
+              trip._id,
+              member._id
+            );
+
+        setStats(
+          response.stats
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+      }
+
+    };
+
+  loadStats();
+
+}, [
+  member,
+  trip
+]);
 
   if (!member) return null;
 
@@ -185,7 +229,7 @@ const MemberDrawer = ({
                   <Map size={14} className="text-gray-400" />
                   <span>Itineraries Added</span>
                 </div>
-                <span className="text-gray-900 font-bold bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">2</span>
+                <span className="text-gray-900 font-bold bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">{stats?.itinerariesAdded ?? "0"}</span>
               </div>
 
               <div className="flex items-center justify-between py-1">
@@ -193,7 +237,7 @@ const MemberDrawer = ({
                   <Wallet size={14} className="text-gray-400" />
                   <span>Expenses Filed</span>
                 </div>
-                <span className="text-gray-900 font-bold bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">5</span>
+                <span className="text-gray-900 font-bold bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">{stats?.expensesFiled ?? "0"}</span>
               </div>
 
               <div className="flex items-center justify-between py-1">
@@ -201,7 +245,7 @@ const MemberDrawer = ({
                   <BarChart3 size={14} className="text-gray-400" />
                   <span>Poll Votes Cast</span>
                 </div>
-                <span className="text-gray-900 font-bold bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">4</span>
+                <span className="text-gray-900 font-bold bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">{stats?.pollVotesCast ?? "0"}</span>
               </div>
 
               <div className="flex items-center justify-between py-1">
@@ -209,7 +253,7 @@ const MemberDrawer = ({
                   <Image size={14} className="text-gray-400" />
                   <span>Photos Contributed</span>
                 </div>
-                <span className="text-gray-900 font-bold bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">8</span>
+                <span className="text-gray-900 font-bold bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">{stats?.photosContributed ?? "0"}</span>
               </div>
             </div>
           </div>

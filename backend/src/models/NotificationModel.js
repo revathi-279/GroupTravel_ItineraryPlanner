@@ -30,7 +30,8 @@ new Schema(
             "trip_invitation",
             "expense",
             "poll",
-            "gallery"
+            "gallery",
+            "settlement"
         ],
         required: true
     },
@@ -53,8 +54,17 @@ new Schema(
     isRead: {
         type: Boolean,
         default: false
-    }
+    },
+    settlementId: {
+  type:
+    Schema.Types.ObjectId,
+  ref:
+    "Settlement",
+  default:
+    null
 },
+},
+
 {
     timestamps: true
 }

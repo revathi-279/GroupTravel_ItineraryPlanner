@@ -56,6 +56,14 @@ async (data) =>
   )
 ).data,
 
+removeProfilePicture:
+async () =>
+(
+  await api.patch(
+    "/auth/remove-profile-picture"
+  )
+).data,
+
 deleteAccount:
 async () =>
   (

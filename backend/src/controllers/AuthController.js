@@ -320,6 +320,39 @@ export const updateProfilePicture =
         }
     };
 
+    export const removeProfilePicture =
+async (req, res) => {
+
+  try {
+
+    const user =
+      await User.findById(
+        req.user._id
+      );
+
+    user.profilePicture = "";
+
+    await user.save();
+
+    return res.status(200).json({
+      message:
+        "Profile picture removed successfully",
+      user
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    return res.status(500).json({
+      message:
+        "Server side error"
+    });
+
+  }
+
+};
+
     export const deleteAccount =
     async (req, res) => {
 

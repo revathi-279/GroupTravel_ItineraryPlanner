@@ -43,32 +43,44 @@ const TripDetails = () => {
   const [trip, setTrip] =
     useState(null);
 
+    const [
+  focusedEventId,
+  setFocusedEventId
+] = useState(null);
+
   const [statistics,
     setStatistics] =
     useState(null);
 
-  const [activeTab,
-setActiveTab] =
-useState(() => {
-
-  return (
-    localStorage.getItem(
-      "tripActiveTab"
-    ) || "Overview"
-  );
-
-});
+const [activeTab, setActiveTab] =
+useState("Overview");
 
 
 
-  useEffect(() => {
+ useEffect(() => {
 
   localStorage.setItem(
-    "tripActiveTab",
+    `tripActiveTab_${tripId}`,
     activeTab
   );
 
-}, [activeTab]);
+}, [
+  activeTab,
+  tripId
+]);
+
+const handleViewEvent =
+  (event) => {
+
+    setFocusedEventId(
+      event._id
+    );
+
+    setActiveTab(
+      "Itinerary"
+    );
+
+  };
 
 const fetchTripData =
 async () => {
@@ -121,11 +133,6 @@ useEffect(() => {
     );
   }
 
-  console.log("TRIP DATA");
-console.log(trip);
-console.log("ADMINS", trip?.admins);
-console.log("MEMBERS", trip?.members);
-
  return (
 
 <div
@@ -157,12 +164,13 @@ console.log("MEMBERS", trip?.members);
     {activeTab ===
     "Overview" && (
 
-      <OverviewTab
+     <OverviewTab
   trip={trip}
   statistics={statistics}
   currentUser={user}
-  refreshTrip={
-    fetchTripData
+  refreshTrip={fetchTripData}
+  onViewEvent={
+    handleViewEvent
   }
 />
     )}
@@ -170,10 +178,13 @@ console.log("MEMBERS", trip?.members);
     {activeTab ===
     "Itinerary" && (
 
-      <ItineraryTab
-        trip={trip}
-        currentUser={user}
-      />
+     <ItineraryTab
+  trip={trip}
+  currentUser={user}
+  focusedEventId={
+    focusedEventId
+  }
+/>
 
     )}
 

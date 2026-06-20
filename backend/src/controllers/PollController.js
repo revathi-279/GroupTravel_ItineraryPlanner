@@ -9,7 +9,13 @@ from "../models/ActivityModel.js";
 export const createPoll = async (req, res) => {
     try {
         // Get tripId, questions, options from body
-        const { tripId, question, options,  allowMultipleVotes} = req.body;
+       const {
+  tripId,
+  question,
+  options,
+  allowMultipleVotes,
+  expiresAt
+} = req.body;
         // Validate fields
         if (!tripId) {
             return res.status(400).json({
@@ -105,15 +111,20 @@ export const createPoll = async (req, res) => {
             question: question.trim(),
             options: formattedOptions,
             createdBy: req.user._id,
-            allowMultipleVotes: Boolean(allowMultipleVotes)
+            allowMultipleVotes: Boolean(allowMultipleVotes),
+              expiresAt:
+    expiresAt || null
         });
 
-        await Activity.create({
+       await Activity.create({
   trip: tripId,
   user: req.user._id,
   type: "poll_created",
-  message:
-    `${req.user.name} created a poll`
+  message: expiresAt
+
+    ? `${req.user.name} created a poll. Ends ${new Date(expiresAt).toLocaleString()}`
+
+    : `${req.user.name} created a poll`
 });
         // Response
         return res.status(200).json({
@@ -280,6 +291,25 @@ export const votePoll = async(req,res) =>  {
                 message: "Poll not found"
             })
         }
+
+        if (
+
+  poll.expiresAt &&
+
+  new Date() >
+  new Date(
+    poll.expiresAt
+  )
+
+) {
+
+  return res.status(400).json({
+    success: false,
+    message:
+      "Poll has closed"
+  });
+
+}
         // Find trip
         const trip = await Trip.findById(poll.tripId);
         
@@ -398,7 +428,7 @@ export const deletePoll =  async(req,res) =>  {
      await Poll.findByIdAndDelete(pollId);
      // Send response
      return res.status(200).json({
-                success: false,
+                success: true,
                 message: "Poll deleted successfully"
             })
     }
@@ -410,3 +440,83 @@ export const deletePoll =  async(req,res) =>  {
         })
     }
 }
+
+export const updatePollExpiry =
+async (req, res) => {
+
+  try {
+
+    const { pollId } =
+      req.params;
+
+    const {
+      expiresAt
+    } = req.body;
+
+    const poll =
+      await Poll.findById(
+        pollId
+      );
+
+    if (!poll) {
+
+      return res.status(404).json({
+        success: false,
+        message:
+          "Poll not found"
+      });
+
+    }
+
+    const trip =
+      await Trip.findById(
+        poll.tripId
+      );
+
+    const isAdminUser =
+      isTripAdmin(
+        trip,
+        req.user._id
+      );
+
+    const isCreator =
+      poll.createdBy.toString() ===
+      req.user._id.toString();
+
+    if (
+      !isAdminUser &&
+      !isCreator
+    ) {
+
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized"
+      });
+
+    }
+
+    poll.expiresAt =
+      expiresAt || null;
+
+    await poll.save();
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Poll expiry updated"
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Server side error"
+    });
+
+  }
+
+};

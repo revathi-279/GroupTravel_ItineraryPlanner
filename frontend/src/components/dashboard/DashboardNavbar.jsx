@@ -6,6 +6,11 @@ import { notificationService } from "../../services/notificationService";
 import NotificationDrawer
 from "./NotificationDrawer";
 
+import {
+  settlementService
+}
+from "../../services/settlementService";
+
 // Clean premium vector iconography
 import { Bell, Compass, LogOut, Settings, User, Trash2, Search, Plus } from "lucide-react";
 
@@ -145,6 +150,36 @@ async (notification) => {
   }
 };
 
+const handleSettlementConfirm =
+async (notification) => {
+
+  try {
+
+    console.log(
+  "Settlement ID:",
+  notification.settlementId
+);
+
+    await settlementService
+      .confirmPayment(
+        notification.settlementId
+      );
+
+    await notificationService
+  .markRead(
+    notification._id
+  );
+
+    await loadNotifications();
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+};
+
   return (
     <nav className="w-full h-16 bg-white border-b border-gray-200/80 sticky top-0 z-50 font-sans antialiased">
       <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
@@ -274,6 +309,9 @@ async (notification) => {
   onClose={() =>
     setShowNotifications(false)
   }
+  onConfirmSettlement={
+  handleSettlementConfirm
+}
   notifications={notifications}
   loading={loadingNotifications}
   onAccept={handleAccept}

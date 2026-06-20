@@ -338,24 +338,16 @@ const [
   {selectedItinerary && (
 
    <EventDrawer
-  itinerary={
-    selectedItinerary
-  }
+  itinerary={selectedItinerary}
   trip={trip}
-  currentUser={
-    currentUser
-  }
+  currentUser={currentUser}
   onClose={() =>
-    setSelectedItinerary(
-      null
-    )
+    setSelectedItinerary(null)
   }
-   onEdit={
-    openEditModal
-  }
-
-  onDelete={
-    openDeleteModal
+  onEdit={openEditModal}
+  onDelete={openDeleteModal}
+  onStatusUpdated={
+    fetchItineraries
   }
 />
 

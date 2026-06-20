@@ -1,8 +1,23 @@
-import { useState } from "react";
+import {
+  useState,
+  useRef,
+  useEffect
+} from "react";
 import { pollService } from "../../../services/pollService";
 
+import ConfirmationModal
+from "../../common/ConfirmationModel";
+
 // Clean premium vector icons matching our application look ✨
-import { BarChart3, User, CheckCircle2, Circle, ArrowRight } from "lucide-react";
+import {
+  BarChart3,
+  User,
+  CheckCircle2,
+  Circle,
+  ArrowRight,
+  MoreVertical,
+  Trash2
+} from "lucide-react";
 
 const PollCard = ({
   poll,
@@ -13,6 +28,71 @@ const PollCard = ({
 }) => {
   const [loading, setLoading] = useState(false);
 
+  const [showMenu, setShowMenu] =
+  useState(false);
+
+  const [
+  showEditExpiryModal,
+  setShowEditExpiryModal
+] = useState(false);
+
+const [
+  expiryDate,
+  setExpiryDate
+] = useState(
+  poll.expiresAt
+    ? new Date(
+        poll.expiresAt
+      )
+      .toISOString()
+      .slice(0, 16)
+    : ""
+);
+
+  const menuRef =
+  useRef(null);
+
+  const [
+  showDeleteModal,
+  setShowDeleteModal
+] = useState(false);
+
+  useEffect(() => {
+
+  const handleClickOutside =
+    (event) => {
+
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(
+          event.target
+        )
+      ) {
+
+        setShowMenu(
+          false
+        );
+
+      }
+
+    };
+
+  document.addEventListener(
+    "mousedown",
+    handleClickOutside
+  );
+
+  return () => {
+
+    document.removeEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+  };
+
+}, []);
+
   const totalVotes = poll.options.reduce(
     (sum, option) => sum + option.votes.length,
     0
@@ -21,6 +101,40 @@ const PollCard = ({
   const isAdmin = trip?.admins?.some(
     (admin) => admin._id === currentUser?._id
   );
+
+  const isCreator =
+  poll.createdBy?._id ===
+  currentUser?._id;
+
+const canDelete =
+  isAdmin || isCreator;
+
+  const isClosed =
+
+  poll.expiresAt &&
+
+  new Date() >
+  new Date(
+    poll.expiresAt
+  );
+
+const expiryText =
+
+  poll.expiresAt
+
+    ? new Date(
+        poll.expiresAt
+      ).toLocaleString(
+        undefined,
+        {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit"
+        }
+      )
+
+    : null;
 
   const handleVote = async (optionId) => {
     if (loading) return;
@@ -38,40 +152,333 @@ const PollCard = ({
     }
   };
 
+  
+
+  const handleDelete =
+async () => {
+
+  try {
+
+    await pollService
+      .deletePoll(
+        poll._id
+      );
+
+    setShowDeleteModal(
+      false
+    );
+
+    refreshPolls();
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+};
+
+const handleUpdateExpiry =
+async () => {
+
+  try {
+
+    await pollService
+      .updatePollExpiry(
+        poll._id,
+        expiryDate || null
+      );
+
+    setShowEditExpiryModal(
+      false
+    );
+
+    refreshPolls();
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+};
+
   return (
     <div className="bg-white border border-gray-200/60 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all duration-200 font-sans antialiased group">
       
       {/* Top Section: Header & Meta Details */}
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-3 flex-1">
-          {/* Question Topic Heading */}
-          <h3 className="text-base font-bold text-gray-900 tracking-tight leading-snug">
-            {poll.question}
-          </h3>
+          <div className="flex-1">
 
-          {/* Creator Signature Block Profile */}
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 overflow-hidden">
-              {poll.createdBy?.profilePicture ? (
-                <img src={poll.createdBy.profilePicture} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-[10px] font-bold uppercase">{poll.createdBy?.name?.[0]}</span>
-              )}
-            </div>
-            <span className="text-xs text-gray-400 font-medium">
-              By {poll.createdBy?.name || "Group Member"}
-            </span>
-          </div>
+  <div className="flex items-center gap-3 mb-4">
+
+    <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100">
+
+      {poll.createdBy?.profilePicture ? (
+
+        <img
+          src={poll.createdBy.profilePicture}
+          alt=""
+          className="w-full h-full object-cover"
+        />
+
+      ) : (
+
+        <div
+          className="
+          w-full
+          h-full
+          flex
+          items-center
+          justify-center
+          font-semibold
+          "
+        >
+          {poll.createdBy?.name?.[0]}
         </div>
 
-        {/* Choice Configuration Tag Badge */}
-        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md flex-shrink-0 ${
-          poll.allowMultipleVotes 
-            ? "bg-[#1E4631]/5 text-[#1E4631]" 
-            : "bg-gray-100 text-gray-500"
-        }`}>
-          {poll.allowMultipleVotes ? "Multiple Choice" : "Single Choice"}
-        </span>
+      )}
+
+    </div>
+
+    <div>
+
+      <p
+        className="
+        text-sm
+        font-semibold
+        text-gray-900
+        "
+      >
+        {poll.createdBy?.name}
+      </p>
+
+      <p
+        className="
+        text-xs
+        text-gray-400
+        "
+      >
+        {new Date(
+  poll.createdAt
+).toLocaleDateString(
+  undefined,
+  {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }
+)}
+      </p>
+
+    </div>
+
+  </div>
+
+  <h3
+    className="
+    text-lg
+    font-bold
+    text-gray-900
+    "
+  >
+    {poll.question}
+  </h3>
+
+  <div
+  className="
+  flex
+  items-center
+  gap-2
+  mt-3
+  "
+>
+
+  <span
+    className={`
+      text-[10px]
+      font-bold
+      uppercase
+      tracking-wider
+      px-2.5
+      py-1
+      rounded-md
+      ${
+        poll.allowMultipleVotes
+          ? "bg-[#1E4631]/5 text-[#1E4631]"
+          : "bg-gray-100 text-gray-500"
+      }
+    `}
+  >
+    {isClosed
+  ? "Voting Closed"
+  : poll.allowMultipleVotes
+    ? "Select One Or More"
+    : "Select One"}
+  </span>
+
+</div>
+
+</div>
+
+        </div>
+
+        <div
+  className="
+  flex
+  items-center
+  gap-2
+  "
+>
+
+  <div
+  className="
+  flex
+  flex-col
+  items-end
+  gap-1
+  "
+>
+
+  <span
+    className={`
+      text-[10px]
+      font-bold
+      uppercase
+      px-2.5
+      py-1
+      rounded-md
+
+      ${
+        isClosed
+          ? "bg-red-50 text-red-600"
+          : "bg-green-50 text-green-700"
+      }
+    `}
+  >
+    {isClosed
+  ? "Closed"
+  : expiryText
+    ? "Active Until"
+    : "Active"}
+  </span>
+
+ {expiryText && (
+
+  <span
+    className="
+    text-[10px]
+    text-gray-400
+    "
+  >
+    {isClosed
+      ? `Ended ${expiryText}`
+      : `Ends ${expiryText}`
+    }
+  </span>
+
+)}
+
+</div>
+
+  {canDelete && (
+
+    <div
+  ref={menuRef}
+  className="
+  relative
+  "
+>
+
+      <button
+        onClick={() =>
+          setShowMenu(
+            !showMenu
+          )
+        }
+      >
+        <MoreVertical
+          size={16}
+        />
+      </button>
+
+      {showMenu && (
+
+        <div
+          className="
+          absolute
+          right-0
+          top-7
+          bg-white
+          border
+          rounded-xl
+          shadow-lg
+          z-20
+          "
+        >
+
+          <button
+  onClick={() => {
+
+    setShowMenu(
+      false
+    );
+
+    setShowEditExpiryModal(
+      true
+    );
+
+  }}
+  className="
+  flex
+  items-center
+  gap-2
+  px-4
+  py-3
+  text-sm
+  hover:bg-gray-50
+  "
+>
+  Edit Poll Time
+</button>
+
+          <button
+            onClick={() => {
+
+  setShowMenu(
+    false
+  );
+
+  setShowDeleteModal(
+    true
+  );
+
+}}
+            className="
+            flex
+            items-center
+            gap-2
+            px-4
+            py-3
+            text-red-600
+            text-sm
+            hover:bg-red-50
+            "
+          >
+            <Trash2 size={14} />
+            Delete Poll
+          </button>
+
+        </div>
+
+      )}
+
+    </div>
+
+  )}
+
+</div>
       </div>
 
       {/* Center Section: Interactive Options List */}
@@ -83,13 +490,40 @@ const PollCard = ({
           return (
             <button
               key={option._id}
-              disabled={loading}
+              disabled={
+  loading ||
+  isClosed
+}
               onClick={() => handleVote(option._id)}
-              className={`w-full text-left relative overflow-hidden border rounded-xl p-3.5 transition-all duration-200 flex flex-col justify-between group/option ${
-                hasVoted
-                  ? "border-[#1E4631] bg-[#1E4631]/[0.02]"
-                  : "border-gray-200/80 hover:bg-gray-50/50 hover:border-gray-300"
-              }`}
+             className={`
+
+w-full
+text-left
+relative
+overflow-hidden
+border
+rounded-xl
+p-3.5
+transition-all
+duration-200
+flex
+flex-col
+justify-between
+
+${
+  isClosed
+
+    ? "opacity-60 cursor-not-allowed"
+
+    : ""
+}
+
+${
+  hasVoted
+    ? "border-[#1E4631] bg-[#1E4631]/[0.02]"
+    : "border-gray-200/80 hover:bg-gray-50/50 hover:border-gray-300"
+}
+`}
             >
               <div className="w-full flex items-center justify-between gap-4 mb-2.5 z-10">
                 <div className="flex items-center gap-2.5 text-sm font-semibold text-gray-800">
@@ -105,10 +539,6 @@ const PollCard = ({
                   </span>
                 </div>
                 
-                {/* Individual Votes Meta Count */}
-                <span className="text-xs font-bold text-gray-400 group-hover/option:text-gray-700 transition-colors">
-                  {option.votes.length} {option.votes.length === 1 ? "vote" : "votes"} ({percentage}%)
-                </span>
               </div>
 
               {/* Seamless Dynamic Micro-Progress Track Layer Bar */}
@@ -120,6 +550,87 @@ const PollCard = ({
                   }`}
                 />
               </div>
+<div
+  className="
+  flex
+  items-center
+  justify-end
+  gap-2
+  mt-2
+  "
+>
+
+  <div
+    className="
+    flex
+    -space-x-3
+    "
+  >
+
+    {option.votes
+      .slice(-3)
+      .map(voter => (
+
+        <div
+          key={voter._id}
+          className="
+          w-8
+          h-8
+          rounded-full
+          border-2
+          border-white
+          overflow-hidden
+          "
+        >
+
+          {voter.profilePicture ? (
+
+            <img
+              src={voter.profilePicture}
+              alt=""
+              className="
+              w-full
+              h-full
+              object-cover
+              "
+            />
+
+          ) : (
+
+            <div
+              className="
+              w-full
+              h-full
+              bg-[#EAF3ED]
+              flex
+              items-center
+              justify-center
+              text-[10px]
+              font-semibold
+              "
+            >
+              {voter.name?.[0]}
+            </div>
+
+          )}
+
+        </div>
+
+      ))}
+
+  </div>
+
+  <span
+    className="
+    text-xs
+    font-semibold
+    text-gray-600
+    "
+  >
+    {option.votes.length}
+  </span>
+
+</div>
             </button>
           );
         })}
@@ -128,8 +639,20 @@ const PollCard = ({
       {/* Bottom Section: Total Counter & Audit Log View Details Action */}
       <div className="flex items-center justify-between pt-4 mt-5 border-t border-gray-100">
         <span className="text-xs font-medium text-gray-400">
-          Total of <span className="font-bold text-gray-700">{totalVotes}</span> response{totalVotes === 1 ? "" : "s"} submitted
-        </span>
+  {
+    new Set(
+      poll.options.flatMap(
+        option =>
+          option.votes.map(
+            vote => vote._id
+          )
+      )
+    ).size
+  }
+  {" of "}
+  {trip.members.length}
+  {" members voted"}
+</span>
 
         <button
           onClick={() => onViewVotes?.(poll)}
@@ -139,6 +662,132 @@ const PollCard = ({
           <ArrowRight size={13} className="transform group-hover:translate-x-0.5 transition-transform" />
         </button>
       </div>
+
+      {
+showEditExpiryModal && (
+
+<div
+  className="
+  fixed
+  inset-0
+  bg-black/40
+  flex
+  items-center
+  justify-center
+  z-50
+  "
+>
+
+  <div
+    className="
+    bg-white
+    rounded-2xl
+    p-6
+    w-full
+    max-w-md
+    "
+  >
+
+    <h3
+      className="
+      text-lg
+      font-bold
+      mb-4
+      "
+    >
+      Edit Poll End Time
+    </h3>
+
+    <input
+      type="datetime-local"
+      value={expiryDate}
+      onChange={(e) =>
+        setExpiryDate(
+          e.target.value
+        )
+      }
+      className="
+      w-full
+      border
+      rounded-xl
+      p-3
+      "
+    />
+
+    <button
+      onClick={() =>
+        setExpiryDate("")
+      }
+      className="
+      mt-3
+      text-sm
+      text-red-600
+      "
+    >
+      Remove End Time
+    </button>
+
+    <div
+      className="
+      flex
+      justify-end
+      gap-3
+      mt-6
+      "
+    >
+
+      <button
+        onClick={() =>
+          setShowEditExpiryModal(
+            false
+          )
+        }
+      >
+        Cancel
+      </button>
+
+      <button
+        onClick={
+          handleUpdateExpiry
+        }
+        className="
+        bg-[#1E4631]
+        text-white
+        px-4
+        py-2
+        rounded-xl
+        "
+      >
+        Save
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+)}
+
+      <ConfirmationModal
+  open={showDeleteModal}
+  title="Delete Poll"
+  message="
+    Are you sure you want
+    to delete this poll?
+    This action cannot
+    be undone.
+  "
+  confirmText="Delete"
+  cancelText="Cancel"
+  confirmVariant="danger"
+  onConfirm={handleDelete}
+  onClose={() =>
+    setShowDeleteModal(
+      false
+    )
+  }
+/>
 
     </div>
   );

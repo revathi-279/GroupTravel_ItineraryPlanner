@@ -43,7 +43,7 @@ const AttentionCenter = ({
   // State 1: Render Dynamic Pending Trip Invitation Card
   if (pendingInvitation) {
     return (
-      <div className={`${theme.cards.attentionPrimary} bg-[#2F6F4E] text-white p-6 md:p-8 rounded-3xl shadow-xl shadow-[#2F6F4E]/10 relative overflow-hidden font-sans antialiased`}>
+      <div className={`${theme.cards.attentionPrimary} relative overflow-hidden font-sans antialiased`}>
         {/* Decorative subtle abstract background glow */}
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none" />
         
@@ -63,7 +63,7 @@ const AttentionCenter = ({
         <div className="flex items-center gap-3">
           <button
             onClick={handleAccept}
-            className="flex items-center gap-1.5 bg-white text-[#2F6F4E] px-5 py-2.5 rounded-xl text-sm font-bold shadow-xs hover:bg-gray-50 active:scale-[0.98] transition-all duration-200"
+            className="flex items-center gap-1.5 bg-white text-[#2F6F4E] px-5 py-2.5 rounded-xl text-sm font-bold shadow-xs hover:bg-[#FAF6ED] active:scale-[0.98] transition-all duration-200"
           >
             <Check size={15} strokeWidth={2.5} />
             Accept
@@ -84,13 +84,12 @@ const AttentionCenter = ({
   // State 2: Render Live Journey In Progress Card
   if (activeTrip) {
     return (
-      <div className={`${theme.cards.attentionPrimary} bg-[#2F6F4E] text-white p-6 md:p-8 rounded-3xl shadow-xl shadow-[#2F6F4E]/10 relative overflow-hidden font-sans antialiased group`}>
+      <div className={`${theme.cards.attentionPrimary} relative overflow-hidden font-sans antialiased group`}>
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/70 mb-3">
           <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
           </span>
           <span>Journey In Progress</span>
         </div>
@@ -115,22 +114,22 @@ const AttentionCenter = ({
   // State 3: Render Secondary Empty State Blank Canvas Card
   if (!upcomingTrip) {
     return (
-      <div className={`${theme.cards.attentionSecondary} bg-white border border-gray-100 p-6 md:p-8 rounded-3xl shadow-xs text-left max-w-xl font-sans antialiased`}>
+      <div className={`${theme.cards.attentionSecondary} max-w-xl font-sans antialiased`}>
         <div className="w-12 h-12 bg-[#2F6F4E]/10 rounded-2xl flex items-center justify-center mb-5 text-[#2F6F4E]">
           <Compass size={24} />
         </div>
 
-        <h2 className="text-xl md:text-2xl font-bold text-gray-800 tracking-tight mb-2">
+        <h2 className={`${theme.typography.sectionTitle} mb-2`}>
           Ready for your first journey?
         </h2>
         
-        <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+        <p className={`${theme.typography.small} mb-6 leading-relaxed`}>
           Create your first journey card to start planning itineraries, group splitting expenses, and collecting gallery memories together.
         </p>
 
         <button
           onClick={onCreateTripClick}
-          className={`${theme.buttons.primary} bg-[#2F6F4E] text-white px-6 py-3 font-semibold rounded-xl text-sm shadow-md shadow-[#2F6F4E]/10 hover:bg-[#23543b] active:scale-[0.99] transition-all duration-200`}
+          className={`${theme.buttons.primary} text-sm`}
         >
           Create Journey
         </button>
@@ -144,11 +143,11 @@ const AttentionCenter = ({
   const daysLeft = Math.ceil((startDate - today) / (1000 * 60 * 60 * 24));
 
   return (
-    <div className={`${theme.cards.attentionPrimary} bg-[#2F6F4E] text-white p-6 md:p-8 rounded-3xl shadow-xl shadow-[#2F6F4E]/10 relative overflow-hidden font-sans antialiased group`}>
+    <div className={`${theme.cards.attentionPrimary} relative overflow-hidden font-sans antialiased group`}>
       <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/70 mb-3">
-        <Hourglass size={13} className="text-white/80 animate-pulse" />
+        <Hourglass size={13} className="text-white/80" />
         <span>Upcoming Journey</span>
       </div>
 

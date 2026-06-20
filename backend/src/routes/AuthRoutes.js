@@ -1,7 +1,7 @@
 import express from "express";
 import { registerUser } from "../controllers/AuthController.js";
 import { loginUser } from "../controllers/AuthController.js";
-import { getUserProfile,logoutUser, updateProfile,updateProfilePicture, deleteAccount} from "../controllers/AuthController.js";
+import { getUserProfile,logoutUser, updateProfile,updateProfilePicture, removeProfilePicture,deleteAccount} from "../controllers/AuthController.js";
 import { verifyToken } from "../middlewares/AuthMiddleware.js";
 import upload
 from "../middlewares/Multer.js";
@@ -37,4 +37,10 @@ authApp.delete(
     "/delete-account",
     verifyToken,
     deleteAccount
+);
+
+authApp.patch(
+  "/remove-profile-picture",
+  verifyToken,
+  removeProfilePicture
 );

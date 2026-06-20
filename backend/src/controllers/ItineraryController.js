@@ -181,11 +181,52 @@ export const getItineraries = async (req, res) => {
             .populate("createdBy", "name profilePicture")
             .populate("updatedBy", "name profilePicture")
             .sort({ dateTime: 1 })
+
+            const now = new Date();
+
+const enrichedItineraries =
+  allItineraries.map(
+    (item, index) => {
+
+      let needsReview = false;
+
+      if (
+        item.status === "Upcoming" &&
+        new Date(item.dateTime) <= now
+      ) {
+
+        const nextActivity =
+          allItineraries[index + 1];
+
+        if (
+
+          !nextActivity ||
+
+          new Date(
+            nextActivity.dateTime
+          ) <= now
+
+        ) {
+
+          needsReview = true;
+
+        }
+
+      }
+
+      return {
+        ...item.toObject(),
+        needsReview
+      };
+
+    }
+  );
         // Send response
-        return res.status(200).json({
-            success: true,
-            allItineraries
-        })
+       return res.status(200).json({
+    success: true,
+    allItineraries:
+      enrichedItineraries
+})
     } catch (error) {
         console.log(error)
         return res.status(500).json({
@@ -292,6 +333,11 @@ export const updateItinerary = async (req, res) => {
         // Find trip
         const trip = await Trip.findById(itinerary.tripId);
 
+        
+            const originalStatus =
+  itinerary.status;
+
+
         // Check if user is admin
         if (!isTripAdmin(trip, req.user._id)) {
             return res.status(403).json({
@@ -300,15 +346,24 @@ export const updateItinerary = async (req, res) => {
             });
         }
         // Validate status - must be those 3 not any other random text
-        if (status && !["Upcoming", "Completed", "Cancelled"].includes(status)) {
+        if (
+  status &&
+  ![
+    "Upcoming",
+    "Completed",
+    "Cancelled"
+  ].includes(status)
+) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid status"
             });
         }
+
+        let wasRescheduled =
+  false;
         // Validate dateTime if provided
         if (dateTime) {
-
             const itineraryDate = new Date(dateTime);
 
             if (isNaN(itineraryDate.getTime())) {
@@ -329,6 +384,23 @@ export const updateItinerary = async (req, res) => {
             }
 
             itinerary.dateTime = itineraryDate;
+          if (
+  (
+    originalStatus === "Completed" ||
+    originalStatus === "Cancelled"
+  ) &&
+  itineraryDate > new Date()
+) {
+
+  itinerary.status =
+    "Upcoming";
+
+  wasRescheduled =
+    true;
+
+}
+
+
             itinerary.isTimeSpecified =
                 dateTime.includes("T");
         }
@@ -346,9 +418,16 @@ export const updateItinerary = async (req, res) => {
             itinerary.location = location.trim();
         }
 
-        if (status !== undefined) {
-            itinerary.status = status;
-        }
+       const previousStatus =
+  originalStatus;
+if (
+  status !== undefined &&
+  status !== previousStatus
+) {
+
+  itinerary.status = status;
+
+}
 
         // The logged in user updates it. We need name 
         itinerary.updatedBy = req.user._id;
@@ -356,13 +435,68 @@ export const updateItinerary = async (req, res) => {
         // Save
         await itinerary.save();
 
-        await Activity.create({
-  trip:itinerary.tripId,
-  user: req.user._id,
-  type: "itinerary_updated",
-  message:
-    `${req.user.name} updated "${title}"`
-});
+        if (status === "Completed") {
+
+  await Itinerary.updateMany(
+
+    {
+      tripId: itinerary.tripId,
+
+      dateTime: {
+        $lt: itinerary.dateTime
+      },
+
+      status: "Upcoming"
+    },
+
+    {
+      $set: {
+        status: "Completed"
+      }
+    }
+
+  );
+
+}
+
+      if (wasRescheduled) {
+
+  await Activity.create({
+    trip: itinerary.tripId,
+    user: req.user._id,
+    type: "itinerary_updated",
+    message:
+      `${req.user.name} rescheduled "${itinerary.title}"`
+  });
+
+}
+
+else if (
+  status !== undefined &&
+  status !== previousStatus
+) {
+
+  await Activity.create({
+    trip: itinerary.tripId,
+    user: req.user._id,
+    type: "itinerary_status_updated",
+    message:
+      `${req.user.name} marked "${itinerary.title}" as ${status}`
+  });
+
+}
+
+else {
+
+  await Activity.create({
+    trip: itinerary.tripId,
+    user: req.user._id,
+    type: "itinerary_updated",
+    message:
+      `${req.user.name} updated "${itinerary.title}"`
+  });
+
+}
 
         // Response
         return res.status(200).json({
@@ -428,10 +562,6 @@ export const deleteItinerary = async (req, res) => {
     
         // Delete itinerary
         await Itinerary.findByIdAndDelete(itineraryId);
-
-        console.log("TripId:", tripId);
-console.log("Type:", "itinerary_deleted");
-console.log("User:", req.user._id);
 
    await Activity.create({
   trip: tripId,

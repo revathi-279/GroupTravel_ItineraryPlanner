@@ -9,6 +9,10 @@ const CreatePollModal = ({ open, trip, onClose, onCreated }) => {
   const [question, setQuestion] = useState("");
   const [allowMultipleVotes, setAllowMultipleVotes] = useState(false);
   const [options, setOptions] = useState(["", ""]);
+  const [
+  expiresAt,
+  setExpiresAt
+] = useState("");
 
   if (!open) return null;
 
@@ -25,12 +29,14 @@ const CreatePollModal = ({ open, trip, onClose, onCreated }) => {
     if (!question.trim() || validOptions.length < 2) return;
 
     try {
-      await pollService.createPoll({
-        tripId: trip._id,
-        question: question.trim(),
-        options: validOptions,
-        allowMultipleVotes,
-      });
+     await pollService.createPoll({
+  tripId: trip._id,
+  question: question.trim(),
+  options: validOptions,
+  allowMultipleVotes,
+  expiresAt:
+    expiresAt || null
+});
 
       onCreated();
       resetForm();
@@ -174,6 +180,40 @@ const CreatePollModal = ({ open, trip, onClose, onCreated }) => {
               <span>Allow participants to select multiple answers</span>
             </button>
           </div>
+
+          <div className="space-y-1.5">
+  <label
+    className="
+    text-[11px]
+    font-bold
+    uppercase
+    tracking-wider
+    text-gray-400
+    "
+  >
+    Poll End Time (Optional)
+  </label>
+
+  <input
+    type="datetime-local"
+    value={expiresAt}
+    onChange={(e) =>
+      setExpiresAt(
+        e.target.value
+      )
+    }
+    className="
+    w-full
+    px-4
+    py-3
+    bg-gray-50/50
+    border
+    border-gray-200
+    rounded-xl
+    text-sm
+    "
+  />
+</div>
 
           {/* Footer Navigation CTA Elements Separator Line Row */}
           <div className="flex items-center justify-end gap-3 pt-5 border-t border-gray-100 mt-6">

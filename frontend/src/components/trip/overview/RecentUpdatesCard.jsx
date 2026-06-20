@@ -11,14 +11,25 @@ from "../../../services/activityService";
 
 import { Sparkles } from "lucide-react";
 
+import ActivityDrawer
+from "./ActivityDrawer";
+
 const RecentUpdatesCard = ({
   trip,
   currentUser
 }) => {
+
+  const [
+  showActivityDrawer,
+  setShowActivityDrawer
+] = useState(false);
+
   const [
   updates,
   setUpdates
 ] = useState([]);
+
+
 
 useEffect(() => {
 
@@ -60,11 +71,13 @@ const getMessage = (
     case "gallery_uploaded":
       return `${actor} uploaded a photo`;
 
-    case "expense_added":
-  return `${actor} added an expense`;
-
-   case "expense_settled":
-  return `${actor} settled an expense`;
+   case "expense_added":
+case "expense_settled":
+case "itinerary_status_updated":
+  return update.message.replace(
+    update.user?.name,
+    actor
+  );
 case "poll_created":
   return `${actor} created a poll`;
 
@@ -164,9 +177,10 @@ return `${days} days ago`;
   "
 >
 
-  {updates.map(
+{updates
+  .slice(0, 5)
+  .map(
     update => (
-
       <div
         key={update._id}
         className="
@@ -241,6 +255,25 @@ return `${days} days ago`;
 
 )}
 
+{updates.length > 5 && (
+
+  <button
+    onClick={() =>
+      setShowActivityDrawer(true)
+    }
+    className="
+    mt-5
+    text-sm
+    font-semibold
+    text-[#1E4631]
+    hover:underline
+    "
+  >
+    View All Activity →
+  </button>
+
+)}
+
 {updates.length === 0 && (
 
   <div
@@ -296,7 +329,18 @@ return `${days} days ago`;
 
 )}
 
+<ActivityDrawer
+  open={showActivityDrawer}
+  onClose={() =>
+    setShowActivityDrawer(false)
+  }
+  updates={updates}
+  currentUser={currentUser}
+/>
+
     </div>
+
+
   );
 };
 

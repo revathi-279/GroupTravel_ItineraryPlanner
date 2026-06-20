@@ -46,7 +46,14 @@ const TripSidebar = ({
       <div className="flex flex-col">
         <div className="p-4 border-b border-gray-100">
           <Link
-            to="/dashboard"
+  to="/dashboard"
+  onClick={() => {
+
+    localStorage.removeItem(
+      `tripActiveTab_${trip._id}`
+    );
+
+  }}
             className="flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-gray-600 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 group"
           >
             <ChevronLeft size={16} className="transform group-hover:-translate-x-0.5 transition-transform" />
@@ -73,7 +80,9 @@ const TripSidebar = ({
 
             <div className="flex items-center gap-2.5">
               <Users size={15} className="text-gray-400" />
-              <span>{statistics?.totalMembers || 0} Members</span>
+             <span>
+  {trip?.members?.length || 0} Members
+</span>
             </div>
 
             <div className="flex items-center gap-2.5">

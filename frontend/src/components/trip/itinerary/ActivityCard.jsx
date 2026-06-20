@@ -2,9 +2,20 @@ import React from "react";
 import { theme } from "../../../common/common";
 
 // Premium minimalistic vectors matching our corporate design identity ✨
-import { Clock, MapPin, User } from "lucide-react";
+import {
+  Clock,
+  MapPin,
+  User,
+  Check,
+  X,
+} from "lucide-react";
 
-const ActivityCard = ({ activity, onClick }) => {
+const ActivityCard = ({
+  id,
+  activity,
+  onClick,
+  isAdmin
+}) => {
   const time = activity?.dateTime
     ? new Date(activity.dateTime).toLocaleTimeString([], {
         hour: "numeric",
@@ -12,9 +23,58 @@ const ActivityCard = ({ activity, onClick }) => {
       })
     : "Flexible";
 
+    const isCompleted =
+  activity?.status ===
+  "Completed";
+
+const isCancelled =
+  activity?.status ===
+  "Cancelled";
+
+
+
+const now = new Date();
+
+const eventDate =
+  new Date(activity.dateTime);
+
+
+const isToday =
+  eventDate.toDateString() ===
+  now.toDateString();
+
+  
+  const needsReview =
+  activity?.needsReview;
+const isOngoing =
+  activity.status === "Upcoming" &&
+  eventDate <= now;
+
+const isUpcoming =
+
+  activity?.status ===
+    "Upcoming"
+
+  &&
+
+  !isOngoing
+
+  &&
+
+  !needsReview;
+
+
+
+  console.log(
+  activity.title,
+  activity.status,
+  activity.dateTime,
+  isAdmin
+);
   return (
-    <div
-      onClick={() => onClick?.(activity)}
+  <div
+    id={id}
+    onClick={() => onClick?.(activity)}
       className="
         bg-white border border-gray-200/60 p-5 rounded-2xl shadow-xs 
         hover:shadow-md hover:border-gray-300 cursor-pointer 
@@ -22,8 +82,45 @@ const ActivityCard = ({ activity, onClick }) => {
       "
     >
       <div>
+        { isAdmin && needsReview && (
+
+  <div
+    className="
+    mb-4
+    p-3
+    rounded-xl
+    bg-amber-50
+    border
+    border-amber-200
+    "
+  >
+
+    <p
+      className="
+      text-xs
+      font-semibold
+      text-amber-700
+      "
+    >
+      Status Review Needed
+    </p>
+
+    <p
+      className="
+      text-[11px]
+      text-amber-600
+      mt-1
+      "
+    >
+      This event time has passed and is still marked as Upcoming.
+    </p>
+
+  </div>
+
+)}
         {/* Top Header Row: Formatted Timestamp */}
         <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1E4631]/80 mb-2.5">
+        
           <Clock size={13} className="text-[#1E4631]/60" />
           <span>{time}</span>
         </div>
@@ -66,11 +163,138 @@ const ActivityCard = ({ activity, onClick }) => {
         </div>
 
         {/* Premium Context Action/Status Pill Label Tag */}
-        {activity?.status && (
-          <span className="text-[10px] font-bold uppercase tracking-wider bg-[#1E4631]/5 text-[#1E4631] px-2.5 py-1 rounded-md flex-shrink-0">
-            {activity.status}
-          </span>
-        )}
+        <div
+  className="
+  flex
+  items-center
+  gap-2
+  "
+>
+
+  {isCompleted && (
+
+    <>
+      <div
+        className="
+        w-5
+        h-5
+        rounded-full
+        bg-green-600
+        flex
+        items-center
+        justify-center
+        "
+      >
+        <Check
+          size={12}
+          className="text-white"
+        />
+      </div>
+
+      <span
+        className="
+        text-[10px]
+        font-bold
+        uppercase
+        text-green-700
+        "
+      >
+        Completed
+      </span>
+    </>
+
+  )}
+
+  {isOngoing && (
+
+    <>
+      <div
+  className="
+  w-5
+  h-5
+        rounded-full
+        bg-[#2F6F4E]
+        animate-pulse
+        "
+      />
+
+      <span
+        className="
+        text-[10px]
+        font-bold
+        uppercase
+        text-[#2F6F4E]
+        "
+      >
+        Ongoing
+      </span>
+    </>
+
+  )}
+
+  {isUpcoming && (
+
+    <>
+     <div
+  className="
+  w-5
+  h-5
+  rounded-full
+  border-2
+  border-gray-400
+  bg-white
+  "
+/>
+
+      <span
+        className="
+        text-[10px]
+        font-bold
+        uppercase
+        text-gray-500
+        "
+      >
+        Upcoming
+      </span>
+    </>
+
+  )}
+
+  {isCancelled && (
+
+    <>
+      <div
+        className="
+        w-5
+        h-5
+        rounded-full
+        bg-red-500
+        flex
+        items-center
+        justify-center
+        "
+      >
+        <X
+          size={12}
+          className="text-white"
+        />
+      </div>
+
+      <span
+        className="
+        text-[10px]
+        font-bold
+        uppercase
+        text-red-600
+        "
+      >
+        Cancelled
+      </span>
+    </>
+
+  )}
+
+</div>
 
       </div>
     </div>

@@ -14,6 +14,9 @@ import {
 }
 from "../../../services/tripService";
 
+import MembersModal
+from "./MembersModal";
+
 // Premium minimalistic vectors matching our corporate design identity ✨
 import { Users, Search, UserPlus, ChevronRight, ShieldCheck } from "lucide-react";
 
@@ -34,6 +37,11 @@ const MembersCard = ({
     message: "",
     action: null,
   });
+
+  const [
+  showMembersModal,
+  setShowMembersModal
+] = useState(false);
 
   // Check if current user is an admin
  const currentUserId =
@@ -95,9 +103,16 @@ const isCurrentUserAdmin =
       open: true,
       title: "Grant Admin Privileges",
       message: `"${member.name}" will receive full administrative clearings and modifying rights for this workspace timeline.`,
-      action: () => {
-        console.log("Promote Member to Admin ID:", member._id);
-      },
+      action: async () => {
+
+  await tripService.addAdmin({
+    tripId: trip._id,
+    memberId: member._id
+  });
+
+  await refreshTrip();
+
+}
     });
   };
 
@@ -106,16 +121,62 @@ const isCurrentUserAdmin =
       open: true,
       title: "Revoke Admin Rights",
       message: `"${member.name}" will lose administrative clearance controls but remain listed as an active trip participant.`,
-      action: () => {
-        console.log("Demote Admin Member ID:", member._id);
-      },
+     action: async () => {
+
+  await tripService.removeAdmin(
+    trip._id,
+    member._id
+  );
+
+  await refreshTrip();
+
+}
     });
   };
 
   // Safe runtime filtering pipeline
-  const filteredMembers = (trip?.members || []).filter((member) =>
-    member?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member?.email?.toLowerCase().includes(searchQuery.toLowerCase())
+const creatorId =
+  String(trip?.createdBy?._id);
+
+const normalizedCurrentUserId =
+  String(
+    currentUserId
+  );
+const sortedMembers =
+  [...(trip?.members || [])]
+    .sort((a, b) => {
+
+      const aIsYou =
+        String(a._id) ===
+        String(currentUserId);
+
+      const bIsYou =
+        String(b._id) ===
+        String(currentUserId);
+
+      if (aIsYou) return -1;
+      if (bIsYou) return 1;
+
+      return a.name.localeCompare(
+        b.name
+      );
+
+    });
+
+const filteredMembers =
+  sortedMembers.filter(
+    member =>
+      member?.name
+        ?.toLowerCase()
+        .includes(
+          searchQuery.toLowerCase()
+        ) ||
+
+      member?.email
+        ?.toLowerCase()
+        .includes(
+          searchQuery.toLowerCase()
+        )
   );
 
   return (
@@ -182,16 +243,20 @@ const isCurrentUserAdmin =
         </div>
 
         {/* Dynamic Crew Scrolling Stack Box Frame */}
-        <div className="flex-1 max-h-[380px] overflow-y-auto pr-1 space-y-1.5 custom-scrollbar divide-y divide-gray-50/60">
+       <div className="space-y-1.5 divide-y divide-gray-50/60">
           {filteredMembers.length === 0 ? (
             <div className="py-8 text-center text-xs font-medium text-gray-400">
               No matching travelers found.
             </div>
           ) : (
-            filteredMembers.map((member) => {
-              const isMemberAdmin = trip?.admins?.some(
-                (admin) => (admin._id || admin) === member?._id
-              );
+            filteredMembers.slice(0,5).map((member) => {
+              const isMemberAdmin =
+  trip?.admins?.some(
+    admin =>
+      String(admin._id || admin) ===
+      String(member._id)
+  );
+
 
               return (
                 <div
@@ -214,7 +279,14 @@ const isCurrentUserAdmin =
                     {/* Member Details Label */}
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-800 tracking-tight truncate max-w-[140px] mb-0.5">
-                        {member?.name || "Traveler"}
+                       {
+  String(member?._id) ===
+  String(currentUserId)
+
+    ? `${member.name} (You)`
+
+    : member.name
+}
                       </p>
                       {isMemberAdmin && (
                         <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#1E4631]/5 text-[#1E4631] px-1.5 py-0.5 rounded-md">
@@ -232,6 +304,30 @@ const isCurrentUserAdmin =
             })
           )}
         </div>
+
+        {trip.members.length > 5 && (
+
+  <button
+    onClick={() =>
+      setShowMembersModal(
+        true
+      )
+    }
+    className="
+    w-full
+    mt-3
+    text-sm
+    font-semibold
+    text-[#1E4631]
+    hover:underline
+    "
+  >
+    View all (
+    {trip.members.length - 5}
+    more)
+  </button>
+
+)}
       </div>
 
       {/* Slide-out Sidebar Workspace Profile Inspector Drawer Overlay */}
@@ -257,6 +353,33 @@ const isCurrentUserAdmin =
         trip={trip}
         currentUser={currentUser}
       />
+
+      <MembersModal
+  open={
+    showMembersModal
+  }
+  onClose={() =>
+    setShowMembersModal(
+      false
+    )
+  }
+  members={filteredMembers}
+  admins={trip.admins}
+  currentUser={currentUser}
+  searchQuery={searchQuery}
+  setSearchQuery={setSearchQuery}
+  onMemberClick={member => {
+
+    setSelectedMember(
+      member
+    );
+
+    setShowMembersModal(
+      false
+    );
+
+  }}
+/>
 
       {/* Security Checkpoints Assertion Warning Dialog Box */}
       <ConfirmationModal

@@ -455,8 +455,15 @@ async (req, res) => {
             });
         }
 
-        notification.isRead =
-            true;
+       notification.isRead = true;
+
+if (
+  notification.type ===
+  "settlement"
+) {
+  notification.status =
+    "accepted";
+}
 
         await notification.save();
 

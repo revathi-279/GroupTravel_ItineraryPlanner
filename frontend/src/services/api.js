@@ -1,6 +1,6 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "https://group-travel-itinerary-planner-backend.onrender.com",
+  baseURL: "http://localhost:9000",
   withCredentials: true,
 });

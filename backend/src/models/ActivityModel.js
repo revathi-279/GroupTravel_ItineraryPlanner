@@ -29,6 +29,7 @@ new Schema(
       "poll_created",
       "gallery_uploaded",
       "itinerary_deleted",
+      "itinerary_status_updated",
       "member_left"
     ],
     required: true

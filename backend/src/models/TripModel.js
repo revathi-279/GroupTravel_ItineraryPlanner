@@ -51,7 +51,16 @@ coverImage: {
             type: Number,
             min: [1, "Budget must be greater than 0"],
             default: null
-        }
+        },
+        aiInsights: {
+  type: String,
+  default: ""
+},
+
+aiInsightsUpdatedAt: {
+  type: Date,
+  default: null
+},
     },
     
     {

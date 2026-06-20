@@ -54,22 +54,56 @@ const PhotoCard = ({ photo, onClick }) => {
         {/* Bottom-Left: Group Reactions Counter Hub Panel */}
         <div className="absolute bottom-3.5 left-3.5 flex flex-wrap gap-1.5 max-w-[85%]">
           {["❤️", "😍", "🔥", "👍"].map((emoji) => {
-            const count = photo.reactions?.filter(
-              (reaction) => reaction.emoji === emoji
-            ).length;
 
-            if (!count || count === 0) return null;
+  const count =
+    photo.reactions?.filter(
+      reaction =>
+        reaction.emoji === emoji
+    ).length || 0;
 
-            return (
-              <div
-                key={emoji}
-                className="inline-flex items-center gap-1 bg-white/10 text-white border border-white/10 backdrop-blur-md px-2 py-1 rounded-full text-[11px] font-bold shadow-xs animate-in fade-in zoom-in-90 duration-150 select-none"
-              >
-                <span>{emoji}</span>
-                <span className="text-white/90 font-sans">{count}</span>
-              </div>
-            );
-          })}
+  return (
+
+    <div
+      key={emoji}
+      className="
+      inline-flex
+      items-center
+      gap-1
+      bg-white/10
+      text-white
+      border
+      border-white/10
+      backdrop-blur-md
+      px-2
+      py-1
+      rounded-full
+      text-[11px]
+      font-bold
+      shadow-xs
+      animate-in
+      fade-in
+      zoom-in-90
+      duration-150
+      select-none
+      "
+    >
+
+      <span>{emoji}</span>
+
+      <span
+        className="
+        text-white/90
+        font-sans
+        "
+      >
+        {count}
+      </span>
+
+    </div>
+
+  );
+
+})}
         </div>
 
       </div>

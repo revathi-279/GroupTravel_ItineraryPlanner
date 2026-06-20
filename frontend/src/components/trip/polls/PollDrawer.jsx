@@ -55,6 +55,84 @@ const PollDrawer = ({ poll, onClose }) => {
 
         {/* Scrollable Dynamic Body Content Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+          <div
+  className="
+  flex
+  items-center
+  gap-2
+  mt-3
+  "
+>
+
+  <span
+    className={`
+      text-[10px]
+      font-bold
+      uppercase
+      px-2.5
+      py-1
+      rounded-md
+
+      ${
+        poll.expiresAt &&
+        new Date() >
+        new Date(
+          poll.expiresAt
+        )
+
+          ? "bg-red-50 text-red-600"
+
+          : "bg-green-50 text-green-700"
+      }
+    `}
+  >
+    {
+      poll.expiresAt &&
+      new Date() >
+      new Date(
+        poll.expiresAt
+      )
+
+        ? "Poll Closed"
+
+        : "Poll Active"
+    }
+  </span>
+
+  {
+    poll.expiresAt &&
+    new Date() <=
+    new Date(
+      poll.expiresAt
+    ) && (
+
+      <span
+        className="
+        text-xs
+        text-gray-400
+        "
+      >
+        Active until{" "}
+        {
+          new Date(
+            poll.expiresAt
+          ).toLocaleString(
+            undefined,
+            {
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit"
+            }
+          )
+        }
+      </span>
+
+    )
+  }
+
+</div>
           
           {/* Section 1: Question Topic & Creator Label */}
           <div className="bg-white border border-gray-200/60 p-5 rounded-2xl shadow-xs space-y-4">

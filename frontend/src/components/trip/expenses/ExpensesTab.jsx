@@ -8,6 +8,9 @@ import {
 }
 from "../../../services/expenseService";
 
+import { settlementService }
+from "../../../services/settlementService";
+
 import ExpenseOverview
 from "./ExpenseOverview";
 
@@ -35,6 +38,12 @@ from "./EmptyExpenses";
 
 import CreateExpenseModal
 from "./CreateExpenseModal";
+
+import SettlementSummaryCard
+from "./SettlementSummaryCard";
+
+import SettlementDrawer
+from "./SettlementDrawer";
 
 import {
   AnimatePresence
@@ -91,6 +100,16 @@ const [
 ] = useState(null);
 
 const [
+  showSettlementDrawer,
+  setShowSettlementDrawer
+] = useState(false);
+
+const [
+  settlements,
+  setSettlements
+] = useState([]);
+
+const [
   confirmation,
   setConfirmation
 ] = useState({
@@ -113,21 +132,27 @@ const [
       try {
 
         const [
-          expensesResponse,
-          summaryResponse,
-        ] = await Promise.all([
+  expensesResponse,
+  summaryResponse,
+  settlementsResponse
+] = await Promise.all([
 
-          expenseService
-            .getExpenses(
-              trip._id
-            ),
+  expenseService
+    .getExpenses(
+      trip._id
+    ),
 
-          expenseService
-            .getSummary(
-              trip._id
-            ),
+  expenseService
+    .getSummary(
+      trip._id
+    ),
 
-        ]);
+  settlementService
+    .getSettlements(
+      trip._id
+    )
+
+]);
 
        setExpenses(
   expensesResponse
@@ -138,11 +163,55 @@ setSummary(
   summaryResponse
 );
 
+setSettlements(
+  settlementsResponse
+    .settlements || []
+);
+
       } catch (error) {
 
         console.log(error);
       }
     };
+
+    const refreshSettlements =
+  async () => {
+
+    try {
+
+      const [
+        settlementsResponse,
+        summaryResponse
+      ] = await Promise.all([
+
+        settlementService
+          .getSettlements(
+            trip._id
+          ),
+
+        expenseService
+          .getSummary(
+            trip._id
+          )
+
+      ]);
+
+      setSettlements(
+        settlementsResponse
+          .settlements || []
+      );
+
+      setSummary(
+        summaryResponse
+      );
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  };
 
   if (!summary) {
 
@@ -227,7 +296,7 @@ const openDeleteExpenseModal =
     );
   };
 
-  console.log(trip.members)
+
 
   return (
 
@@ -291,17 +360,21 @@ const openDeleteExpenseModal =
 
 
       <div
-        className="
-        grid
-        md:grid-cols-3
-        gap-4
-        mb-8
-        "
-      >
+  className="
+  mb-8
+  "
+>
 
+  <SettlementSummaryCard
+  settlements={settlements}
+  onOpen={() =>
+    setShowSettlementDrawer(
+      true
+    )
+  }
+/>
 
-      </div>
-
+</div>
     
 
 
@@ -428,6 +501,20 @@ const openDeleteExpenseModal =
     });
 
   }}
+/>
+
+<SettlementDrawer
+  open={showSettlementDrawer}
+  settlements={settlements}
+  currentUser={currentUser}
+  refreshSettlements={
+    refreshSettlements
+  }
+  onClose={() =>
+    setShowSettlementDrawer(
+      false
+    )
+  }
 />
 
 <CreateExpenseModal

@@ -212,22 +212,6 @@ const [
   )}
 
 </AnimatePresence>
-
-      <AnimatePresence>
-
-  {selectedPoll && (
-
-    <PollDrawer
-      poll={selectedPoll}
-      onClose={() =>
-        setSelectedPoll(null)
-      }
-    />
-
-  )}
-
-</AnimatePresence>
-
     </div>
 
   );

@@ -1,6 +1,10 @@
 import express from "express";
 import { createTrip, getAllTrips, getTrip, updateTrip, deleteTrip,searchTrips } from "../controllers/TripController.js";
 import { addMember, getMembers, removeMember, addAdmin, removeAdmin, leaveTrip, updateTripCoverImage,getTripStatistics } from "../controllers/TripController.js";
+import {
+  getMemberStats
+}
+from "../controllers/MemberController.js";
 import { verifyToken } from "../middlewares/AuthMiddleware.js";
 import upload
 from "../middlewares/Multer.js";
@@ -34,5 +38,11 @@ tripApp.get(
     "/search",
     verifyToken,
     searchTrips
+);
+
+tripApp.get(
+  "/member-stats/:tripId/:memberId",
+  verifyToken,
+  getMemberStats
 );
 

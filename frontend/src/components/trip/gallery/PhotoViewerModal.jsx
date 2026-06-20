@@ -21,12 +21,25 @@ const PhotoViewerModal = ({
   const [showReactions, setShowReactions] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef(null);
+const captionRef = useRef(null);
 
   useEffect(() => {
-    setShowMenu(false);
-    setShowReactions(false);
-    setCaption(photo?.caption || "");
-  }, [photo]);
+
+  setShowMenu(false);
+  setShowReactions(false);
+
+  if (!editingCaption) {
+
+    setCaption(
+      photo?.caption || ""
+    );
+
+  }
+
+}, [
+  photo,
+  editingCaption
+]);
 
   // Handle Escape key closure shortcut
   useEffect(() => {
@@ -37,16 +50,65 @@ const PhotoViewerModal = ({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
+  useEffect(() => {
+
+  const handleCaptionOutside =
+    (event) => {
+
+      if (
+        editingCaption &&
+        captionRef.current &&
+        !captionRef.current.contains(
+          event.target
+        )
+      ) {
+
+        setEditingCaption(
+          false
+        );
+
+        setCaption(
+          photo?.caption || ""
+        );
+
+      }
+
+    };
+
+  document.addEventListener(
+    "mousedown",
+    handleCaptionOutside
+  );
+
+  return () =>
+    document.removeEventListener(
+      "mousedown",
+      handleCaptionOutside
+    );
+
+}, [
+  editingCaption,
+  photo
+]);
+
   // Dropdown closure hook
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setShowMenu(false);
-      }
-    };
+
+  if (editingCaption)
+    return;
+
+  if (
+    menuRef.current &&
+    !menuRef.current.contains(e.target)
+  ) {
+    setShowMenu(false);
+  }
+
+};
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [editingCaption]);
 
   if (!photo) return null;
 
@@ -131,6 +193,58 @@ const PhotoViewerModal = ({
     }
   };
 
+  const formatUploadDate = (
+  date
+) => {
+
+  const uploaded =
+    new Date(date);
+
+  const today =
+    new Date();
+
+  const yesterday =
+    new Date();
+
+  yesterday.setDate(
+    yesterday.getDate() - 1
+  );
+
+  const time =
+    uploaded.toLocaleTimeString(
+      [],
+      {
+        hour: "numeric",
+        minute: "2-digit"
+      }
+    );
+
+  if (
+    uploaded.toDateString() ===
+    today.toDateString()
+  ) {
+    return `Today at ${time}`;
+  }
+
+  if (
+    uploaded.toDateString() ===
+    yesterday.toDateString()
+  ) {
+    return `Yesterday at ${time}`;
+  }
+
+  return uploaded.toLocaleDateString(
+    "en-IN",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    }
+  ) + ` at ${time}`;
+
+};
+
+
   return (
     <AnimatePresence>
       <motion.div
@@ -141,65 +255,171 @@ const PhotoViewerModal = ({
         className="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex flex-col font-sans antialiased"
       >
         {/* Core Layout Modal Window Framework Wrapper */}
-        <div onClick={(e) => e.stopPropagation()} className="w-full h-full flex flex-col justify-between">
+        <div onClick={(e) => e.stopPropagation()} className="w-full h-full flex flex-col">
           
           {/* Top Panel: Header Navigation Bar */}
           <div className="w-full bg-gradient-to-b from-black/60 to-transparent px-6 py-4 flex items-center justify-between z-10 border-b border-white/5 bg-black/20">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-[#1E4631] flex items-center justify-center text-white text-xs font-bold ring-2 ring-white/10">
-                {photo.uploadedBy?.name?.[0]?.toUpperCase()}
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white tracking-tight">{photo.uploadedBy?.name || "Traveler"}</p>
-                <p className="text-[10px] font-medium text-gray-400">Shared Trip Memory</p>
-              </div>
-            </div>
+        
 
-            {/* Central Caption Layout Container Area */}
-            {(photo.caption || editingCaption || isUploader) && (
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-[40vw] hidden md:block">
-                {editingCaption ? (
-                  <div className="flex items-center gap-2 bg-neutral-900/80 p-1.5 rounded-xl border border-white/10 shadow-xl">
-                    <input
-                      type="text"
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
-                      placeholder="Caption this memory..."
-                      className="bg-transparent text-xs text-white outline-none px-2 py-1 w-48 font-medium"
-                      autoFocus
-                    />
-                    <button
-                      onClick={saveCaption}
-                      className="p-1.5 bg-[#1E4631] rounded-lg text-white hover:bg-[#153122] transition-colors"
-                    >
-                      <Check size={12} strokeWidth={3} />
-                    </button>
-                  </div>
-                ) : photo.caption ? (
-                  <p className="text-sm font-semibold tracking-tight text-white/95 truncate px-4">
-                    {photo.caption}
-                  </p>
-                ) : (
-                  isUploader && (
-                    <button
-                      onClick={() => setEditingCaption(true)}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-white transition-colors"
-                    >
-                      <Edit2 size={12} />
-                      <span>Add custom caption memory...</span>
-                    </button>
-                  )
-                )}
-              </div>
-            )}
+          <div
+  className="
+  w-full
+  bg-gradient-to-b
+  from-black/60
+  to-transparent
+  px-6
+  py-4
+  grid
+  grid-cols-3
+  items-center
+  border-b
+  border-white/5
+  bg-black/20
+  z-10
+  "
+>
 
-            {/* Header Close Shortcut Action Target Button */}
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all active:scale-95"
-            >
-              <X size={18} />
-            </button>
+  {/* Left */}
+  <div className="justify-self-start flex items-center gap-3">
+
+    <div
+      className="
+      w-9
+      h-9
+      rounded-full
+      overflow-hidden
+      bg-[#1E4631]
+      "
+    >
+      {photo.uploadedBy?.profilePicture ? (
+
+        <img
+          src={photo.uploadedBy.profilePicture}
+          alt=""
+          className="
+          w-full
+          h-full
+          object-cover
+          "
+        />
+
+      ) : (
+
+        <div
+          className="
+          w-full
+          h-full
+          flex
+          items-center
+          justify-center
+          text-white
+          text-xs
+          font-bold
+          "
+        >
+          {photo.uploadedBy?.name?.[0]}
+        </div>
+
+      )}
+    </div>
+
+    <div>
+
+      <p className="text-xs font-bold text-white">
+        {photo.uploadedBy?.name}
+      </p>
+
+      <p className="text-[10px] text-gray-400">
+        {formatUploadDate(photo.createdAt)}
+      </p>
+
+    </div>
+
+  </div>
+
+  {/* Center */}
+  <div className="justify-self-center">
+
+    {editingCaption ? (
+
+     <div
+  ref={captionRef}
+  className="
+  flex
+  items-center
+  gap-2
+  "
+>
+
+        <input
+          value={caption}
+          onChange={(e) =>
+            setCaption(
+              e.target.value
+            )
+          }
+          className="
+          bg-neutral-900
+          text-white
+          text-sm
+          px-3
+          py-2
+          rounded-xl
+          "
+        />
+
+        <button
+          onClick={saveCaption}
+          className="
+          bg-[#1E4631]
+          p-2
+          rounded-lg
+          "
+        >
+          <Check size={14}/>
+        </button>
+
+      </div>
+
+    ) : (
+
+      <p
+        className="
+        text-white
+        text-sm
+        font-semibold
+        text-center
+        max-w-[500px]
+        break-words
+        "
+      >
+        {photo.caption}
+      </p>
+
+    )}
+
+  </div>
+
+  {/* Right */}
+  <div className="justify-self-end">
+
+    <button
+      onClick={onClose}
+      className="
+      p-2
+      rounded-xl
+      text-gray-400
+      hover:text-white
+      "
+    >
+      <X size={18}/>
+    </button>
+
+  </div>
+
+</div>
+
+      
           </div>
 
           {/* Center Panel: Primary Media View Canvas */}

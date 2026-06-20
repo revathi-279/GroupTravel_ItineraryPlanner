@@ -2,7 +2,15 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Premium minimalistic vectors matching our corporate design identity ✨
-import { Bell, X, Loader2, Check, CornerDownRight, CalendarDays } from "lucide-react";
+import {
+  Bell,
+  X,
+  Loader2,
+  Check,
+  CalendarDays,
+  Wallet
+}
+from "lucide-react";
 
 const NotificationDrawer = ({
   open,
@@ -11,6 +19,7 @@ const NotificationDrawer = ({
   loading,
   onAccept,
   onReject,
+  onConfirmSettlement
 }) => {
   
   // Handle Escape key closure shortcuts safely
@@ -90,6 +99,7 @@ const NotificationDrawer = ({
               /* Active Notifications Mapping Collection */
               <div className="divide-y divide-gray-100 bg-white">
                 {notifications.map((notification) => {
+              
                   const formattedDate = notification?.createdAt
                     ? new Date(notification.createdAt).toLocaleString([], {
                         month: "short",
@@ -117,6 +127,7 @@ const NotificationDrawer = ({
 
                       {/* Case Handling Action Toolbars: Trip Invitations Processing */}
                       {notification.type === "trip_invitation" && notification.status === "pending" && (
+                        
                         <div className="flex items-center gap-2 mt-4 pl-1">
                           <button
                             onClick={() => onAccept?.(notification)}
@@ -133,8 +144,83 @@ const NotificationDrawer = ({
                         </div>
                       )}
 
+                      {notification.type === "settlement" &&
+ notification.status === "pending" && (
+
+  <div
+    className="
+    flex
+    items-center
+    gap-2
+    mt-4
+    "
+  >
+
+   <button
+  onClick={() =>
+    onConfirmSettlement?.(
+      notification
+    )
+  }
+  className="
+  bg-[#1E4631]
+  hover:bg-[#153122]
+  text-white
+  px-3.5
+  py-1.5
+  rounded-lg
+  text-[11px]
+  font-bold
+  tracking-wide
+  "
+>
+  Confirm
+</button>
+
+  </div>
+
+)}
+
+{notification.type ===
+  "settlement" &&
+
+  notification.status ===
+  "accepted" && (
+
+  <div
+    className="
+    inline-flex
+    items-center
+    gap-1
+    text-[10px]
+    font-bold
+    uppercase
+    tracking-wider
+    text-[#1E4631]
+    bg-[#1E4631]/5
+    px-2
+    py-0.5
+    rounded-md
+    mt-3
+    "
+  >
+
+    <Wallet size={10} />
+
+    <span>
+      Payment Confirmed
+    </span>
+
+  </div>
+
+)}
+
                       {/* Case Handling Badge Tracker: Invitation Accepted Status */}
-                      {notification.status === "accepted" && (
+                     {notification.type ===
+  "trip_invitation" &&
+
+  notification.status ===
+  "accepted" && (
                         <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#1E4631] bg-[#1E4631]/5 px-2 py-0.5 rounded-md mt-3 select-none">
                           <Check size={10} strokeWidth={3} />
                           <span>Joined Trip</span>
@@ -142,7 +228,11 @@ const NotificationDrawer = ({
                       )}
 
                       {/* Case Handling Badge Tracker: Invitation Declined Status */}
-                      {notification.status === "rejected" && (
+                      {notification.type ===
+  "trip_invitation" &&
+
+  notification.status ===
+  "rejected" && (
                         <div className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-md mt-3 select-none">
                           <X size={10} strokeWidth={3} />
                           <span>Declined</span>

@@ -10,6 +10,12 @@ import AttentionCenter from "../../components/dashboard/AttentionCenter";
 import DashboardSkeleton from "../../components/dashboard/DashboardSkeleton";
 import CreateTripModal from "../../components/dashboard/CreateTripModal";
 
+import { weatherService }
+from "../../services/weatherService"
+
+import WeatherCard
+from "../../components/dashboard/WeatherCard";
+
 import { Compass, Search } from "lucide-react";
 
 const Dashboard = () => {
@@ -18,6 +24,11 @@ const Dashboard = () => {
   const [filteredTrips, setFilteredTrips] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [search, setSearch] = useState("");
+
+  const [
+  weather,
+  setWeather
+] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const fetchDashboardData = async () => {
@@ -25,10 +36,49 @@ const Dashboard = () => {
       setLoading(true);
       const [tripsResponse, notificationsResponse] = await Promise.all([
         tripService.getTrips(),
+        
         notificationService.getNotifications(),
       ]);
       setTrips(tripsResponse.trips || []);
       setFilteredTrips(tripsResponse.trips || []);
+      if (
+  tripsResponse.trips?.length
+) {
+
+  const activeTrip =
+    tripsResponse.trips.find(
+      trip => {
+
+        const today =
+          new Date();
+
+        return (
+          today >=
+            new Date(
+              trip.startDate
+            ) &&
+          today <=
+            new Date(
+              trip.endDate
+            )
+        );
+
+      }
+    );
+
+  if (activeTrip) {
+
+    const weatherResponse =
+      await weatherService
+        .getWeather(
+          activeTrip._id
+        );
+
+    setWeather(
+      weatherResponse
+    );
+  }
+}
       setNotifications(notificationsResponse.notifications || []);
     } catch (error) {
       console.log(error);
@@ -104,8 +154,8 @@ const Dashboard = () => {
  (pendingInvitation ||
   activeTrip ||
   upcomingTrip) && (
-              <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-                <div className="lg:col-span-2 flex flex-col justify-between">
+              <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <div className="lg:col-span-8 flex flex-col justify-between">
                   {/* Internal components will inherit background hex #1E4631 cleanly */}
                   <AttentionCenter
                     pendingInvitation={pendingInvitation}
@@ -116,22 +166,21 @@ const Dashboard = () => {
                   />
                 </div>
                 
-                {/* Right Workspace Context Overview Panel Box */}
-                <div className="bg-white border border-gray-200/60 p-6 rounded-2xl shadow-xs hidden lg:flex flex-col justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold text-[#1E4631] uppercase tracking-widest bg-[#1E4631]/5 px-2.5 py-1 rounded-md">
-                      Workspace Insights
-                    </span>
-                    <h3 className="text-base font-bold text-gray-900 mt-5 tracking-tight">System Status</h3>
-                    <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-                      You are monitoring <span className="font-semibold text-gray-700">{trips.length} active timelines</span>. 
-                      Share coordination plans and view updates in real time.
-                    </p>
-                  </div>
-                  <div className="text-[10px] font-medium text-gray-400 pt-4 border-t border-gray-100">
-                    Console Core Engine v1.1
-                  </div>
-                </div>
+                {activeTrip &&
+ weather && (
+  <div
+  className="
+  lg:col-span-4
+  "
+>
+
+  <WeatherCard
+    weather={weather}
+      tripId={activeTrip._id}
+  />
+  </div>
+
+)}
               </section>
             )}
 

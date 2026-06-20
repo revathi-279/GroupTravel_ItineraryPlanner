@@ -4,6 +4,11 @@ import Expense from "../models/ExpenseModel.js"
 import Activity
 from "../models/ActivityModel.js";
 
+import {
+  generateSettlements
+}
+from "../utils/generateSettlements.js";
+
 export const addExpense = async (req, res) => {
     try {
         const {
@@ -173,6 +178,10 @@ export const addExpense = async (req, res) => {
   message:
     `${req.user.name} added expense "${title}"`
 });
+
+await generateSettlements(
+  tripId
+);
 
         // While creating we access ids but not names. Populate after creating
         const populatedExpense = await Expense.findById(expense._id)
@@ -457,6 +466,10 @@ export const updateExpense = async (req, res) => {
 
         // Save expense
         await expense.save();
+
+        await generateSettlements(
+  expense.tripId
+);
         // Populate
         const populatedExpense = await Expense.findById(expense._id)
             .populate("payers.user", "name")
@@ -540,6 +553,10 @@ export const deleteExpense = async (req, res) => {
         await Expense.findByIdAndDelete(
             expenseId
         );
+
+        await generateSettlements(
+  expense.tripId
+);
 
         // Send response
         return res.status(200).json({

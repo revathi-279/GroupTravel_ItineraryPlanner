@@ -176,7 +176,7 @@ export const getTrip = async (req, res) => {
   "admins",
   "name email profilePicture"
 )
-console.log(trip.members)
+
 
         if (!trip) {
             return res.status(404).json({
@@ -738,7 +738,6 @@ export const addAdmin = async(req,res) => {
     const isMember = trip.members.some(
         member => member.toString() === memberId  // Returns true or false
     )
-    console.log(isMember);
      if(!isMember) {
       return res.status(404).json({
             success : false,

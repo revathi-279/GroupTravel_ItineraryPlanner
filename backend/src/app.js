@@ -25,6 +25,12 @@ from "./routes/WeatherRoutes.js";
 import { activityApp }
 from "./routes/ActivityRoutes.js";
 
+import aiRoutes
+from "./routes/AIRoutes.js";
+
+import settlementRoutes
+from "./routes/SettlementRoutes.js";
+
 // Creates express application
 const app = express();
 // Frontend and backend communication
@@ -74,6 +80,15 @@ app.use(
 app.use(
   "/activity",
   activityApp
+);
+app.use(
+  "/ai",
+  aiRoutes
+);
+
+app.use(
+  "/settlement",
+  settlementRoutes
 );
 
 export default app;

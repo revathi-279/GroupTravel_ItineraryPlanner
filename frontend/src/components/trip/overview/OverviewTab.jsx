@@ -4,46 +4,95 @@ from "../members/MembersCard";
 import RecentUpdatesCard
 from "./RecentUpdatesCard";
 
+import UpcomingEventCard
+from "./UpcomingEventCard";
+
+import WeatherStatusCard
+from "./WeatherStatusCard";
+
+import TravelInsightsCard from "./TravelInsightsCard";
+
 const OverviewTab = ({
   trip,
   currentUser,
-  refreshTrip
+  refreshTrip,
+  onViewEvent
 }) => {
 
-  return (
+  const handleViewEvent =
+  (event) => {
+
+    onViewEvent?.(event);
+
+  };
+
+ return (
+
+  <div
+    className="
+    grid
+    grid-cols-1
+    lg:grid-cols-12
+    gap-6
+    "
+  >
+
+    {/* LEFT COLUMN */}
 
     <div
       className="
-      grid
-      grid-cols-1
-      lg:grid-cols-12
+      lg:col-span-5
+      flex
+      flex-col
       gap-6
       "
     >
 
-      <div
-        className="
-        lg:col-span-5
-        "
-      >
-       <MembersCard
-  trip={trip}
-  currentUser={currentUser}
-  refreshTrip={refreshTrip}
-/>
-      </div>
+      <MembersCard
+        trip={trip}
+        currentUser={currentUser}
+        refreshTrip={refreshTrip}
+      />
 
-      <div
-        className="
-        lg:col-span-7
-        "
-      >
-       <RecentUpdatesCard trip={trip} />
-      </div>
+      <RecentUpdatesCard
+        trip={trip}
+        currentUser={currentUser}
+      />
 
     </div>
 
-  );
+    {/* RIGHT COLUMN */}
+
+    <div
+      className="
+      lg:col-span-7
+      flex
+      flex-col
+      gap-6
+      "
+    >
+
+      <UpcomingEventCard
+        trip={trip}
+        onViewEvent={
+          handleViewEvent
+        }
+      />
+
+      <WeatherStatusCard
+        trip={trip}
+      />
+
+      <TravelInsightsCard
+        trip={trip}
+      />
+
+    </div>
+
+  </div>
+
+);
+
 };
 
 export default OverviewTab;

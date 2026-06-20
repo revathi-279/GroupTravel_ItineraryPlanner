@@ -4,7 +4,12 @@ import ActivityCard from "./ActivityCard";
 // Clean premium layout indicators matching our typography ecosystem ✨
 import { CalendarDays } from "lucide-react";
 
-const DayGroup = ({ day, activities = [], onActivityClick }) => {
+const DayGroup = ({
+  day,
+  activities = [],
+  onActivityClick,
+  isAdmin
+}) => {
   
   // Guard clause to handle unexpected rendering edge-cases cleanly
   if (!activities || activities.length === 0) return null;
@@ -42,8 +47,10 @@ const DayGroup = ({ day, activities = [], onActivityClick }) => {
             className="animate-in fade-in slide-in-from-top-1 duration-200"
           >
             <ActivityCard
+            id={`event-${activity._id}`}
               activity={activity}
               onClick={onActivityClick}
+              isAdmin={isAdmin}
             />
           </div>
         ))}

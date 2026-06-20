@@ -58,4 +58,47 @@ async (tripId) => {
 
   return response.data;
 },
+
+addAdmin:
+async (data) => {
+
+  const response =
+    await api.patch(
+      "/trip/add-admin",
+      data
+    );
+
+  return response.data;
+
+},
+
+removeAdmin:
+async (
+  tripId,
+  adminId
+) => {
+
+  const response =
+    await api.delete(
+      `/trip/remove-admin/${tripId}/${adminId}`
+    );
+
+  return response.data;
+
+},
+
+removeMember:
+async (
+  tripId,
+  memberId
+) => {
+
+  const response =
+    await api.delete(
+      `/trip/remove-member/${tripId}/${memberId}`
+    );
+
+  return response.data;
+
+},
 };

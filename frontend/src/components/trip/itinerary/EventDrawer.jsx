@@ -1,9 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { theme } from "../../../common/common";
 
+import { itineraryService }
+from "../../../services/itineraryService";
+
 // Premium minimalistic vectors matching our unified design identity ✨
-import { X, MapPin, Clock, User, History, Edit2, Trash2, AlignLeft } from "lucide-react";
+import {
+  X,
+  MapPin,
+  Clock,
+  History,
+  Edit2,
+  Trash2,
+  AlignLeft,
+  MoreVertical
+} from "lucide-react";
 
 const EventDrawer = ({
   itinerary,
@@ -12,7 +24,16 @@ const EventDrawer = ({
   onClose,
   onEdit,
   onDelete,
+  onStatusUpdated,
 }) => {
+
+  const [showMenu, setShowMenu] =
+  useState(false);
+
+  const [
+  statusLoading,
+  setStatusLoading
+] = useState(false);
   // Handle Escape key closure shortcut safely
   useEffect(() => {
     const handleEscape = (e) => {
@@ -22,12 +43,123 @@ const EventDrawer = ({
     return () => window.removeEventListener("keydown", handleEscape);
   }, [onClose]);
 
+  useEffect(() => {
+
+  const handleClick =
+    event => {
+
+      if (
+        !event.target.closest(
+          ".event-menu-container"
+        )
+      ) {
+        setShowMenu(false);
+      }
+
+    };
+
+  document.addEventListener(
+    "mousedown",
+    handleClick
+  );
+
+  return () =>
+    document.removeEventListener(
+      "mousedown",
+      handleClick
+    );
+
+}, []);
+
   if (!itinerary) return null;
 
   const currentUserId = currentUser?.id || currentUser?._id;
-  const currentUserIsAdmin = trip?.admins?.some(
-    (admin) => admin._id?.toString() === currentUserId?.toString()
+  const currentUserIsAdmin =
+  trip?.admins?.some(
+    admin => {
+
+      const adminId =
+        admin?._id || admin;
+
+      return (
+        String(adminId) ===
+        String(currentUserId)
+      );
+
+    }
   );
+  const updateStatus =
+async (newStatus) => {
+
+  try {
+
+    setStatusLoading(
+      true
+    );
+
+    await itineraryService
+      .updateItinerary({
+        itineraryId:
+          itinerary._id,
+        status:
+          newStatus
+      });
+
+      await onStatusUpdated?.();
+
+    itinerary.status =
+      newStatus;
+
+  } catch (error) {
+
+    console.log(error);
+
+  } finally {
+
+    setStatusLoading(
+      false
+    );
+
+  }
+
+};
+const now = new Date();
+
+const eventDate =
+  new Date(itinerary.dateTime);
+
+
+
+const isCompleted =
+  itinerary.status ===
+    "Completed";
+
+const isCancelled =
+  itinerary.status ===
+    "Cancelled";
+
+const isOngoing =
+  itinerary.status ===
+    "Upcoming" &&
+  eventDate <= now;
+
+const needsReview =
+  itinerary.needsReview;
+
+const canUpdateStatus =
+
+  itinerary.status ===
+  "Upcoming"
+
+  &&
+
+  (
+    isOngoing ||
+    needsReview
+  );
+
+
+  
 
   const wasUpdated =
     new Date(itinerary.updatedAt).getTime() - new Date(itinerary.createdAt).getTime() > 1000;
@@ -62,18 +194,169 @@ const EventDrawer = ({
       >
         
         {/* Header Section */}
-        <div className="p-6 bg-white border-b border-gray-200/60 flex items-center justify-between">
-          <h2 className="text-base font-bold tracking-tight text-gray-900">
-            Event Overview
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200"
-            aria-label="Close panel"
+       <div
+  className="
+  p-6
+  bg-white
+  border-b
+  border-gray-200/60
+  flex
+  items-center
+  justify-between
+  event-menu-container
+  "
+>
+
+  <h2
+    className="
+    text-base
+    font-bold
+    tracking-tight
+    text-gray-900
+    "
+  >
+    Event Overview
+  </h2>
+
+  <div
+    className="
+    flex
+    items-center
+    gap-1.5
+    "
+  >
+
+    {currentUserIsAdmin && (
+
+      <div
+        className="
+        relative
+        "
+      >
+
+        <button
+          onClick={() =>
+            setShowMenu(
+              !showMenu
+            )
+          }
+          className="
+          p-2
+          rounded-xl
+          text-gray-400
+          hover:text-gray-700
+          hover:bg-gray-50
+          "
+        >
+          <MoreVertical
+            size={16}
+          />
+        </button>
+
+        {showMenu && (
+
+          <div
+            className="
+            absolute
+            right-0
+            top-full
+            mt-2
+            w-48
+            bg-white
+            border
+            border-gray-100
+            rounded-xl
+            shadow-xl
+            overflow-hidden
+            z-50
+            "
           >
-            <X size={16} />
-          </button>
-        </div>
+
+            <button
+              onClick={() => {
+
+                setShowMenu(
+                  false
+                );
+
+                onEdit?.(
+                  itinerary
+                );
+
+              }}
+              className="
+              w-full
+              px-4
+              py-3
+              text-left
+              text-sm
+              hover:bg-gray-50
+              flex
+              items-center
+              gap-2
+              "
+            >
+              <Edit2
+                size={14}
+              />
+              Edit Event
+            </button>
+
+            <button
+              onClick={() => {
+
+                setShowMenu(
+                  false
+                );
+
+                onDelete?.(
+                  itinerary
+                );
+
+              }}
+              className="
+              w-full
+              px-4
+              py-3
+              text-left
+              text-sm
+              text-red-600
+              hover:bg-red-50
+              flex
+              items-center
+              gap-2
+              "
+            >
+              <Trash2
+                size={14}
+              />
+              Delete Event
+            </button>
+
+          </div>
+
+        )}
+
+      </div>
+
+    )}
+
+    <button
+      onClick={onClose}
+      className="
+      p-2
+      rounded-xl
+      text-gray-400
+      hover:text-gray-700
+      hover:bg-gray-50
+      "
+    >
+      <X size={16}/>
+    </button>
+
+  </div>
+
+</div>
 
         {/* Scrollable Content Container */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
@@ -102,6 +385,168 @@ const EventDrawer = ({
               </div>
             </div>
           </div>
+
+          {currentUserIsAdmin && (
+
+  <div
+    className="
+    bg-white
+    border
+    border-gray-200/60
+    rounded-2xl
+    p-5
+    shadow-xs
+    "
+  >
+    <h4
+      className="
+      text-[11px]
+      font-bold
+      uppercase
+      tracking-wider
+      text-gray-400
+      mb-3
+      "
+    >
+      Event Status
+    </h4>
+{currentUserIsAdmin &&
+  needsReview && (
+
+    <div
+      className="
+      bg-amber-50
+      border
+      border-amber-200
+      rounded-2xl
+      p-4
+      "
+    >
+
+      <p
+        className="
+        text-sm
+        text-amber-800
+        font-medium
+        "
+      >
+        This event has passed.
+        Please update its status.
+      </p>
+
+    </div>
+
+)}
+
+{currentUserIsAdmin &&
+  canUpdateStatus && (
+
+    <div
+      className="
+      bg-gray-50
+      border
+      border-gray-200
+      rounded-2xl
+      p-4
+      space-y-3
+      "
+    >
+
+      <button
+        onClick={() =>
+          updateStatus(
+            "Completed"
+          )
+        }
+        className="
+        w-full
+        bg-[#2F6F4E]
+        text-white
+        py-2
+        rounded-xl
+        text-sm
+        "
+      >
+        Mark Completed
+      </button>
+
+      <button
+        onClick={() =>
+          updateStatus(
+            "Cancelled"
+          )
+        }
+        className="
+        w-full
+        bg-red-500
+        text-white
+        py-2
+        rounded-xl
+        text-sm
+        "
+      >
+        Mark Cancelled
+      </button>
+
+    </div>
+
+)}
+
+{isCompleted && (
+
+  <div
+    className="
+    bg-green-50
+    border
+    border-green-200
+    rounded-2xl
+    p-4
+    "
+  >
+
+    <p
+      className="
+      text-green-700
+      text-sm
+      font-medium
+      "
+    >
+      This event has been completed.
+    </p>
+
+  </div>
+
+)}
+
+{isCancelled && (
+
+  <div
+    className="
+    bg-red-50
+    border
+    border-red-200
+    rounded-2xl
+    p-4
+    "
+  >
+
+    <p
+      className="
+      text-red-700
+      text-sm
+      font-medium
+      "
+    >
+      This event has been cancelled.
+    </p>
+
+  </div>
+
+)}
+
+  </div>
+
+)}
 
           {/* Description Section */}
           <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-xs space-y-2.5">
@@ -161,26 +606,6 @@ const EventDrawer = ({
           </div>
 
         </div>
-
-        {/* Admin Configuration Actions Drawer Footer */}
-        {currentUserIsAdmin && (
-          <div className="p-6 bg-white border-t border-gray-200/60 space-y-2.5">
-            <button
-              onClick={() => onEdit?.(itinerary)}
-              className="w-full flex items-center justify-center gap-1.5 bg-[#1E4631] hover:bg-[#153122] text-white py-2.5 rounded-xl text-xs font-semibold tracking-wide shadow-sm transition-all duration-150 active:scale-[0.99]"
-            >
-              <Edit2 size={13} />
-              <span>Edit Event Details</span>
-            </button>
-            <button
-              onClick={() => onDelete?.(itinerary)}
-              className="w-full flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-150 active:scale-[0.99]"
-            >
-              <Trash2 size={13} />
-              <span>Delete Event Milestone</span>
-            </button>
-          </div>
-        )}
 
       </motion.div>
     </>

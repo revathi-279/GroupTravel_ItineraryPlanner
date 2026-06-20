@@ -8,7 +8,11 @@ import { theme } from "../../common/common";
 import { ArrowLeft, Camera, Shield, Trash2, User, Mail, Lock, Loader2 } from "lucide-react";
 
 const Profile = () => {
-  const { user, refreshUser } = useAuth();
+ const {
+  user,
+  refreshUser,
+  logout
+} = useAuth();
   const navigate = useNavigate();
 
   const [saving, setSaving] = useState(false);
@@ -19,6 +23,14 @@ const Profile = () => {
   const [email, setEmail] = useState(user?.email || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [isEditing, setIsEditing] =
+  useState(false);
+
+  const [showPhotoMenu, setShowPhotoMenu] =
+  useState(false);
+
+const [showPhotoPreview, setShowPhotoPreview] =
+  useState(false);
 
   useEffect(() => {
     setName(user?.name || "");
@@ -69,6 +81,7 @@ const Profile = () => {
     }
   };
 
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] font-sans antialiased text-gray-900 pb-24">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -82,179 +95,517 @@ const Profile = () => {
           <span>Back to Dashboard</span>
         </button>
 
-        {/* Master Content Split Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* Left Column Section: User Branding Meta Card */}
-          <div className="lg:col-span-4">
-            <div className="bg-white border border-gray-200/60 rounded-2xl p-6 text-center shadow-xs space-y-5 select-none">
-              <div className="relative w-32 h-32 mx-auto group">
-                {user?.profilePicture ? (
-                  <img
-                    src={user.profilePicture}
-                    alt=""
-                    className="w-full h-full rounded-full object-cover ring-4 ring-gray-50 border border-gray-100"
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-[#1E4631] text-white text-4xl font-extrabold flex items-center justify-center ring-4 ring-[#1E4631]/10">
-                    {user?.name?.[0]?.toUpperCase() || "U"}
-                  </div>
-                )}
-                
-                {/* Floating Media Trigger Input Action Label */}
-                <label className="absolute bottom-0 right-0 p-2 bg-white hover:bg-gray-50 border border-gray-200 shadow-md rounded-xl cursor-pointer transition-all active:scale-90 text-gray-600 hover:text-gray-900">
-                  {uploadingPhoto ? (
-                    <Loader2 size={14} className="animate-spin text-[#1E4631]" />
-                  ) : (
-                    <Camera size={14} />
-                  )}
+        <div className="max-w-3xl mx-auto">
+
+  {/* Profile Header */}
+  <div className="bg-white border border-gray-200/60 rounded-3xl p-8 shadow-xs mb-6">
+
+    <div className="text-center">
+
+      <div className="relative w-32 h-32 mx-auto group">
+
+        {user?.profilePicture ? (
+          <img
+            src={user.profilePicture}
+            alt=""
+            className="
+            w-full
+            h-full
+            rounded-full
+            object-cover
+            ring-4
+            ring-gray-50
+            border
+            border-gray-100
+            "
+          />
+        ) : (
+          <div
+            className="
+            w-full
+            h-full
+            rounded-full
+            bg-[#1E4631]
+            text-white
+            text-4xl
+            font-extrabold
+            flex
+            items-center
+            justify-center
+            ring-4
+            ring-[#1E4631]/10
+            "
+          >
+            {user?.name?.[0]?.toUpperCase() || "U"}
+          </div>
+        )}
+
+        <button
+          onClick={() =>
+            setShowPhotoMenu(
+              !showPhotoMenu
+            )
+          }
+          className="
+          absolute
+          bottom-0
+          right-0
+          p-2
+          bg-white
+          border
+          border-gray-200
+          shadow-md
+          rounded-xl
+          "
+        >
+          {uploadingPhoto ? (
+            <Loader2
+              size={14}
+              className="
+              animate-spin
+              text-[#1E4631]
+              "
+            />
+          ) : (
+            <Camera size={14} />
+          )}
+        </button>
+
+        {showPhotoMenu && (
+
+          <div
+            className="
+            absolute
+            top-full
+            left-1/2
+            -translate-x-1/2
+            mt-3
+            w-44
+            bg-white
+            border
+            border-gray-200
+            rounded-2xl
+            shadow-xl
+            overflow-hidden
+            z-50
+            "
+          >
+
+            {user?.profilePicture ? (
+
+              <>
+                <button
+                  onClick={() => {
+
+                    setShowPhotoPreview(
+                      true
+                    );
+
+                    setShowPhotoMenu(
+                      false
+                    );
+
+                  }}
+                  className="
+                  w-full
+                  px-4
+                  py-3
+                  text-left
+                  text-sm
+                  hover:bg-gray-50
+                  "
+                >
+                  View Photo
+                </button>
+
+                <label
+                  className="
+                  block
+                  px-4
+                  py-3
+                  text-sm
+                  cursor-pointer
+                  hover:bg-gray-50
+                  "
+                >
+                  Change Photo
+
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={uploadProfilePicture}
-                    disabled={uploadingPhoto}
+                    onChange={
+                      uploadProfilePicture
+                    }
                     className="hidden"
                   />
                 </label>
-              </div>
+              </>
 
-              <div className="space-y-1">
-                <h2 className="text-base font-extrabold tracking-tight text-gray-900 truncate px-2">
-                  {user?.name || "Group Traveler"}
-                </h2>
-                <p className="text-xs text-gray-400 font-medium truncate px-2">
-                  {user?.email}
-                </p>
-              </div>
+            ) : (
 
-              {uploadingPhoto && (
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#1E4631] animate-pulse">
-                  Uploading image file...
-                </p>
-              )}
-            </div>
-          </div>
+              <label
+                className="
+                block
+                px-4
+                py-3
+                text-sm
+                cursor-pointer
+                hover:bg-gray-50
+                "
+              >
+                Add Photo
 
-          {/* Right Column Section: Core Functional Forms Group */}
-          <div className="lg:col-span-8 space-y-6">
-            
-            {/* Panel 1: Profile Properties Modification Area */}
-            <div className="bg-white border border-gray-200/60 rounded-2xl p-6 shadow-xs space-y-5">
-              <div className="flex items-center gap-2 text-gray-400 border-b border-gray-50 pb-3">
-                <User size={15} />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                  Account Particulars
-                </h3>
-              </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={
+                    uploadProfilePicture
+                  }
+                  className="hidden"
+                />
+              </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 transition-all text-gray-800"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                    <Mail size={12} className="text-gray-400" /> Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 transition-all text-gray-800"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  disabled={saving || !name.trim() || !email.trim()}
-                  onClick={saveProfile}
-                  className="bg-[#1E4631] hover:bg-[#153122] text-white px-4 py-2 rounded-xl text-xs font-semibold tracking-wide shadow-sm transition-all active:scale-[0.98] disabled:opacity-40"
-                >
-                  {saving ? "Saving Changes..." : "Save Identity Changes"}
-                </button>
-              </div>
-            </div>
-
-            {/* Panel 2: Credentials and Security Forms Area */}
-            <div className="bg-white border border-gray-200/60 rounded-2xl p-6 shadow-xs space-y-5">
-              <div className="flex items-center gap-2 text-gray-400 border-b border-gray-50 pb-3">
-                <Shield size={15} />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                  Security Parameters
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                    <Lock size={12} className="text-gray-400" /> Current Password
-                  </label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 transition-all text-gray-800 placeholder-gray-300"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                    <Lock size={12} className="text-gray-400" /> New Secret Password
-                  </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Minimum 6 characters"
-                    className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 transition-all text-gray-800 placeholder-gray-300"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  disabled={changingPassword || !currentPassword || !newPassword}
-                  onClick={updatePassword}
-                  className="bg-[#1E4631] hover:bg-[#153122] text-white px-4 py-2 rounded-xl text-xs font-semibold tracking-wide shadow-sm transition-all active:scale-[0.98] disabled:opacity-40"
-                >
-                  {changingPassword ? "Updating Password..." : "Update Token Password"}
-                </button>
-              </div>
-            </div>
-
-            {/* Panel 3: Terminal Hazard Boundary Area */}
-            <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-xs space-y-4">
-              <div className="flex items-center gap-2 text-red-500 border-b border-red-50/60 pb-3 select-none">
-                <Trash2 size={15} />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-red-600">
-                  Danger Zone Terminal
-                </h3>
-              </div>
-              
-              <div className="space-y-3">
-                <p className="text-[11px] text-gray-400 leading-relaxed font-medium max-w-xl">
-                  Permanently wipe your traveler profile profile parameters along with all your historical synchronized logs, split expenses networks, and active group canvas properties from our core systems.
-                </p>
-                <button className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all active:scale-[0.98]">
-                  Delete Identity Account
-                </button>
-              </div>
-            </div>
+            )}
 
           </div>
-        </div>
+
+        )}
 
       </div>
+
+      <h2
+        className="
+        mt-5
+        text-xl
+        font-bold
+        text-gray-900
+        "
+      >
+        {user?.name}
+      </h2>
+
+      <p
+        className="
+        text-sm
+        text-gray-400
+        mt-1
+        "
+      >
+        {user?.email}
+      </p>
+
+      {!isEditing && (
+
+  <div
+    className="
+    flex
+    gap-3
+    justify-center
+    mt-8
+    "
+  >
+
+    <button
+      onClick={() =>
+        setIsEditing(true)
+      }
+      className="
+      bg-[#1E4631]
+      text-white
+      px-6
+      py-3
+      rounded-xl
+      text-sm
+      font-semibold
+      "
+    >
+      Edit Profile
+    </button>
+
+    <button
+      onClick={logout}
+      className="
+      bg-red-500
+      text-white
+      px-6
+      py-3
+      rounded-xl
+      text-sm
+      font-semibold
+      "
+    >
+      Logout
+    </button>
+
+  </div>
+
+)}
+
+{isEditing && (
+
+  <div
+    className="
+    mt-8
+    pt-8
+    border-t
+    border-gray-100
+    text-left
+    "
+  >
+
+    <div className="space-y-4">
+
+      <div>
+        <label
+          className="
+          text-xs
+          text-gray-400
+          font-semibold
+          "
+        >
+          Full Name
+        </label>
+
+        <input
+          type="text"
+          value={name}
+          onChange={(e) =>
+            setName(
+              e.target.value
+            )
+          }
+          className="
+          w-full
+          mt-1
+          px-4
+          py-3
+          border
+          border-gray-200
+          rounded-xl
+          "
+        />
+      </div>
+
+      <div>
+        <label
+          className="
+          text-xs
+          text-gray-400
+          font-semibold
+          "
+        >
+          Email Address
+        </label>
+
+        <input
+          type="email"
+          value={email}
+          onChange={(e) =>
+            setEmail(
+              e.target.value
+            )
+          }
+          className="
+          w-full
+          mt-1
+          px-4
+          py-3
+          border
+          border-gray-200
+          rounded-xl
+          "
+        />
+      </div>
+
+      <div
+        className="
+        pt-4
+        border-t
+        border-gray-100
+        "
+      >
+
+        <h3
+          className="
+          text-sm
+          font-bold
+          text-gray-700
+          mb-4
+          "
+        >
+          Change Password
+        </h3>
+
+        <input
+          type="password"
+          placeholder="Current Password"
+          value={currentPassword}
+          onChange={(e) =>
+            setCurrentPassword(
+              e.target.value
+            )
+          }
+          className="
+          w-full
+          mb-3
+          px-4
+          py-3
+          border
+          border-gray-200
+          rounded-xl
+          "
+        />
+
+        <input
+          type="password"
+          placeholder="New Password"
+          value={newPassword}
+          onChange={(e) =>
+            setNewPassword(
+              e.target.value
+            )
+          }
+          className="
+          w-full
+          px-4
+          py-3
+          border
+          border-gray-200
+          rounded-xl
+          "
+        />
+
+      </div>
+
+      <div
+        className="
+        flex
+        gap-3
+        pt-4
+        "
+      >
+
+        <button
+          onClick={saveProfile}
+          className="
+          bg-[#1E4631]
+          text-white
+          px-5
+          py-3
+          rounded-xl
+          text-sm
+          font-semibold
+          "
+        >
+          Save Changes
+        </button>
+
+        <button
+          onClick={updatePassword}
+          className="
+          bg-gray-100
+          text-gray-700
+          px-5
+          py-3
+          rounded-xl
+          text-sm
+          font-semibold
+          "
+        >
+          Update Password
+        </button>
+
+        <button
+          onClick={() => {
+
+            setIsEditing(
+              false
+            );
+
+            setName(
+              user?.name || ""
+            );
+
+            setEmail(
+              user?.email || ""
+            );
+
+            setCurrentPassword(
+              ""
+            );
+
+            setNewPassword(
+              ""
+            );
+
+          }}
+          className="
+          bg-red-50
+          text-red-600
+          px-5
+          py-3
+          rounded-xl
+          text-sm
+          font-semibold
+          "
+        >
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
+
+    </div>
+  </div>
+
+ 
+
+  
+</div>
+
+      </div>
+
+      {showPhotoPreview && (
+
+  <div
+    onClick={() =>
+      setShowPhotoPreview(
+        false
+      )
+    }
+    className="
+    fixed
+    inset-0
+    bg-black/70
+    z-50
+    flex
+    items-center
+    justify-center
+    p-6
+    "
+  >
+
+    <img
+      src={
+        user?.profilePicture
+      }
+      alt=""
+      className="
+      max-h-[80vh]
+      max-w-[80vw]
+      rounded-2xl
+      shadow-2xl
+      "
+    />
+
+  </div>
+
+)}
     </div>
   );
 };
