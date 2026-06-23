@@ -1,305 +1,143 @@
-import {
-  useEffect,
-  useState
-}
-from "react";
+import { useEffect, useState } from "react";
+import { theme } from "../../../common/common";
+import { aiService } from "../../../services/aiService";
+import TravelInsightsDrawer from "./TravelInsightsDrawer";
+import { 
+  Sun, 
+  MapPinned, 
+  Bus, 
+  Utensils, 
+  Hotel, 
+  Backpack, 
+  Loader2, 
+  Sparkles 
+} from "lucide-react";
 
-import {
-  Sun,
-  MapPinned,
-  Bus,
-  Utensils,
-  Hotel,
-  Backpack
-}
-from "lucide-react";
+const TravelInsightsCard = ({ trip }) => {
+  const [insights, setInsights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showDrawer, setShowDrawer] = useState(false);
 
-import {
-  aiService
-}
-from "../../../services/aiService";
+  const loadInsights = async (forceRefresh = false) => {
+    try {
+      setLoading(true);
+      const response = forceRefresh
+        ? await aiService.refreshTripInsights(trip._id)
+        : await aiService.getTripInsights(trip._id);
 
-import TravelInsightsDrawer
-from "./TravelInsightsDrawer";
-
-const TravelInsightsCard = ({
-  trip
-}) => {
-
-  const [
-    insights,
-    setInsights
-  ] = useState([]);
-
-  const [
-    loading,
-    setLoading
-  ] = useState(true);
-
-  const [
-  showDrawer,
-  setShowDrawer
-] = useState(false);
-
-  
-  const loadInsights =
-async (
-  forceRefresh = false
-) => {
-
-  try {
-
-    setLoading(true);
-
-    const response =
-      forceRefresh
-        ? await aiService
-            .refreshTripInsights(
-              trip._id
-            )
-        : await aiService
-            .getTripInsights(
-              trip._id
-            );
-
-  setInsights(
-  response.insights || {}
-);
-  } catch (error) {
-
-    console.log(error);
-
-  } finally {
-
-    setLoading(false);
-
-  }
-
-};
-
-
-
+      setInsights(response.insights || {});
+    } catch (error) {
+      console.log(error);
+    } {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
+    loadInsights();
+  }, [trip]);
 
-  loadInsights();
-
-}, [trip]);
-
-  const getIcon =
-  (type) => {
-
+  const getIcon = (type) => {
     switch(type) {
-
       case "weather":
-        return <Sun size={18} />;
-
+        return <Sun size={15} />;
       case "attraction":
-        return <MapPinned size={18} />;
-
+        return <MapPinned size={15} />;
       case "transport":
-        return <Bus size={18} />;
-
+        return <Bus size={15} />;
       case "food":
-        return <Utensils size={18} />;
-
+        return <Utensils size={15} />;
       case "stay":
-        return <Hotel size={18} />;
-
+        return <Hotel size={15} />;
       case "packing":
-        return <Backpack size={18} />;
-
+        return <Backpack size={15} />;
       default:
-        return <Sun size={18} />;
-
+        return <Sun size={15} />;
     }
-
   };
 
   return (
+    <div className="bg-white border border-[#EFE9DC] rounded-3xl p-6 h-full flex flex-col font-sans antialiased text-slate-900">
+      
+      {/* Card Header Row */}
+      <div className="flex items-center justify-between mb-5 select-none flex-shrink-0">
+        <h3 className="text-xs uppercase tracking-wider font-bold text-stone-400">
+          Travel Insights
+        </h3>
 
-    <div
-      className="
-      bg-white
-      border
-      border-gray-200/60
-      rounded-2xl
-      p-6
-      h-full
-      "
-    >
-
-     <div
-  className="
-  flex
-  items-center
-  justify-between
-  mb-5
-  "
->
-
-  <h3
-    className="
-    text-xs
-    uppercase
-    tracking-widest
-    font-bold
-    text-gray-400
-    "
-  >
-    Travel Insights
-  </h3>
-
-  <button
-  onClick={() =>
-    loadInsights(true)
-  }
-  disabled={loading}
-  className="
-  text-xs
-  font-semibold
-  text-[#1E4631]
-  hover:underline
-  "
->
-  Refresh
-</button>
-
-</div>
-
-      {loading && (
-
-        <p
-          className="
-          text-sm
-          text-gray-500
-          "
+        <button
+          onClick={() => loadInsights(true)}
+          disabled={loading}
+          className="text-xs font-bold text-[#2D6A4F] hover:text-[#1B4332] disabled:opacity-50 transition-colors"
         >
-          Generating insights...
-        </p>
-
-      )}
-
-      {!loading &&
-       insights.length === 0 && (
-
-        <p
-          className="
-          text-sm
-          text-gray-500
-          "
-        >
-          No insights available.
-        </p>
-
-      )}
-
-      <div
-        className="
-        space-y-3
-        "
-      >
-
-        {insights.quickInsights?.map(
-          (
-            insight,
-            index
-          ) => (
-
-            <div
-              key={index}
-              className="
-              flex
-              gap-3
-              p-3
-              rounded-xl
-              bg-gray-50
-              "
-            >
-
-              <div
-                className="
-                text-[#2F6F4E]
-                mt-0.5
-                "
-              >
-                {getIcon(
-                  insight.type
-                )}
-              </div>
-
-              <div>
-
-                <h4
-                  className="
-                  text-sm
-                  font-semibold
-                  text-gray-900
-                  "
-                >
-                  {insight.title}
-                </h4>
-
-                <p
-                  className="
-                  text-xs
-                  text-gray-500
-                  mt-1
-                  "
-                >
-                  {insight.description}
-                </p>
-
-              </div>
-
-            </div>
-
-          )
-        )}
-
+          Refresh
+        </button>
       </div>
 
-      <div
-  className="
-  pt-4
-  mt-4
-  border-t
-  border-gray-100
-  "
->
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col justify-center">
+        {loading && (
+          <div className="py-12 flex flex-col items-center justify-center gap-2.5 text-stone-400">
+            <Loader2 size={20} className="animate-spin text-[#2D6A4F]" />
+            <span className="text-xs font-semibold">Generating smart insights...</span>
+          </div>
+        )}
 
-  <button
-    onClick={() =>
-      setShowDrawer(
-        true
-      )
-    }
-    className="
-    text-sm
-    font-semibold
-    text-[#1E4631]
-    hover:underline
-    "
-  >
-    View Detailed Insights →
-  </button>
+        {!loading && (!insights.quickInsights || insights.quickInsights.length === 0) && (
+          <div className="py-12 text-center select-none">
+            <div className="w-12 h-12 rounded-xl bg-[#FAF8F5] border border-[#EFE9DC] flex items-center justify-center mx-auto mb-3">
+              <Sparkles size={18} className="text-stone-400" />
+            </div>
+            <p className="text-xs font-semibold text-stone-400">
+              No insights generated for this route yet.
+            </p>
+          </div>
+        )}
 
-</div>
+        {!loading && insights.quickInsights?.length > 0 && (
+          <div className="space-y-3">
+            {insights.quickInsights.map((insight, index) => (
+              <div
+                key={index}
+                className="flex gap-3 p-3.5 rounded-xl bg-[#FAF8F5] border border-[#EFE9DC]/40"
+              >
+                <div className="text-[#2D6A4F] mt-0.5 flex-shrink-0">
+                  {getIcon(insight.type)}
+                </div>
 
-<TravelInsightsDrawer
-  open={showDrawer}
-  onClose={() =>
-    setShowDrawer(false)
-  }
-  insights={
-    insights.detailedInsights
-  }
-/>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs font-bold text-slate-800 tracking-tight leading-normal">
+                    {insight.title}
+                  </h4>
+                  <p className="text-[11px] font-medium text-stone-400 mt-0.5 leading-relaxed">
+                    {insight.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
+      {/* Footer Drawer Activation Bar */}
+      {!loading && insights.quickInsights?.length > 0 && (
+        <div className="pt-4 mt-5 border-t border-[#F5F0E6] flex-shrink-0">
+          <button
+            onClick={() => setShowDrawer(true)}
+            className="text-xs font-bold text-[#2D6A4F] hover:text-[#1B4332] transition-colors"
+          >
+            View Detailed Insights →
+          </button>
+        </div>
+      )}
+
+      <TravelInsightsDrawer
+        open={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        insights={insights.detailedInsights}
+      />
     </div>
-
   );
-
 };
 
 export default TravelInsightsCard;

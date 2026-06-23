@@ -4,45 +4,60 @@ import { itineraryService } from "../../../services/itineraryService";
 import Spinner from "../../common/Spinner";
 
 // Premium minimalistic vectors matching our corporate design identity ✨
-import { Compass, MapPin, Calendar, AlignLeft, X, AlertCircle } from "lucide-react";
+import { Compass, MapPin, Calendar, Clock, AlignLeft, X, AlertCircle, ChevronDown } from "lucide-react";
 
 const CreateEventModal = ({ open, onClose, trip, onCreated }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  
+  const [dateFields, setDateFields] = useState({
+    date: "", // Stores parsed "YYYY-MM-DD"
+    time: ""  // Stores parsed "HH:MM"
+  });
+
   const [formData, setFormData] = useState({
     title: "",
     location: "",
     description: "",
-    dateTime: "",
   });
+
+  // Custom Dropdown UI Open/Close States
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  // Close custom pickers dynamically on clicking anywhere outside their respective wrapper fields
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest(".date-picker-wrapper")) {
+        setShowDatePicker(false);
+      }
+      if (!e.target.closest(".time-picker-wrapper")) {
+        setShowTimePicker(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   // Handle Escape key closure shortcut safely
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleCloseWrapper();
     };
     if (open) window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: "",
-      });
-    }
+    setFormData({ ...formData, [name]: value });
+    if (errors[name]) setErrors({ ...errors, [name]: "" });
   };
 
-  const validate = () => {
+  const validate = (combinedDateTimeString) => {
     const newErrors = {};
 
     if (!formData.title.trim()) {
@@ -55,15 +70,19 @@ const CreateEventModal = ({ open, onClose, trip, onCreated }) => {
       newErrors.location = "Location is required";
     }
 
-    if (!formData.dateTime) {
-      newErrors.dateTime = "Date & Time is required";
+    if (!dateFields.date || !dateFields.time) {
+      newErrors.dateTime = "Both Date and Time fields are required";
+      return newErrors;
     }
 
-    const eventDate = new Date(formData.dateTime);
+    const eventDate = new Date(combinedDateTimeString);
     const tripStart = new Date(trip.startDate);
     const tripEnd = new Date(trip.endDate);
 
-    if (formData.dateTime && (eventDate < tripStart || eventDate > tripEnd)) {
+    tripStart.setHours(0, 0, 0, 0);
+    tripEnd.setHours(23, 59, 59, 999);
+
+    if (eventDate < tripStart || eventDate > tripEnd) {
       newErrors.dateTime = "Event must be within trip dates";
     }
 
@@ -72,7 +91,13 @@ const CreateEventModal = ({ open, onClose, trip, onCreated }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validate();
+    
+    let combinedDateTime = "";
+    if (dateFields.date && dateFields.time) {
+      combinedDateTime = `${dateFields.date}T${dateFields.time}`;
+    }
+
+    const validationErrors = validate(combinedDateTime);
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -86,18 +111,12 @@ const CreateEventModal = ({ open, onClose, trip, onCreated }) => {
         title: formData.title.trim(),
         location: formData.location.trim(),
         description: formData.description.trim(),
-        dateTime: formData.dateTime,
+        dateTime: combinedDateTime,
         isTimeSpecified: true,
       });
 
       onCreated();
-      onClose();
-      setFormData({
-        title: "",
-        location: "",
-        description: "",
-        dateTime: "",
-      });
+      handleCloseWrapper();
     } catch (error) {
       console.log(error);
     } finally {
@@ -105,120 +124,242 @@ const CreateEventModal = ({ open, onClose, trip, onCreated }) => {
     }
   };
 
-  const tripStartFormatted = trip?.startDate ? new Date(trip.startDate).toLocaleDateString() : "";
-  const tripEndFormatted = trip?.endDate ? new Date(trip.endDate).toLocaleDateString() : "";
+  const handleCloseWrapper = () => {
+    setFormData({ title: "", location: "", description: "" });
+    setDateFields({ date: "", time: "" });
+    setErrors({});
+    setShowDatePicker(false);
+    setShowTimePicker(false);
+    onClose();
+  };
+
+  // Generate date array elements dynamically between trip windows
+  const generateTripDates = () => {
+    if (!trip?.startDate || !trip?.endDate) return [];
+    const dates = [];
+    let current = new Date(trip.startDate);
+    const end = new Date(trip.endDate);
+
+    while (current <= end) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  };
+
+  // Generate clean 30-minute intervals for our scrollable custom dropdown timeline list
+  const generateTimeIntervals = () => {
+    const intervals = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let min = 0; min < 60; min += 30) {
+        const hStr = hour.toString().padStart(2, "0");
+        const mStr = min.toString().padStart(2, "0");
+        
+        const period = hour >= 12 ? "PM" : "AM";
+        const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+        const displayStr = `${displayHour}:${mStr} ${period}`;
+
+        intervals.push({ value: `${hStr}:${mStr}`, display: displayStr });
+      }
+    }
+    return intervals;
+  };
+
+  const tripDates = generateTripDates();
+  const timeIntervals = generateTimeIntervals();
+
+  const selectedDateDisplay = dateFields.date 
+    ? new Date(dateFields.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : "Select Day";
+
+  const selectedTimeDisplay = dateFields.time
+    ? timeIntervals.find(t => t.value === dateFields.time)?.display || dateFields.time
+    : "Select Time";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Dimmed Overlay Backdrop */}
-      <div
-        onClick={onClose}
-        className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-      />
+      {/* Dimmed Overlay Backdrop layer ensuring layout color temperature stability */}
+      <div onClick={handleCloseWrapper} className="absolute inset-0 bg-slate-900/20 backdrop-blur-xs transition-opacity" />
 
-      {/* Main Structural Modal Content Box Layout */}
-      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-gray-100 p-6 md:p-8 z-10 font-sans antialiased animate-in fade-in zoom-in-95 duration-150">
+      {/* Main Structural Modal Content Box - Pure White Base Card */}
+      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-[#EFE9DC] p-6 md:p-8 z-10 font-sans antialiased animate-in fade-in zoom-in-95 duration-150 text-slate-900">
         
-        {/* Absolute Close Action Button */}
+        {/* Absolute Dismissal Trigger */}
         <button
-          onClick={onClose}
-          className="absolute right-6 top-6 p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all"
+          type="button"
+          onClick={handleCloseWrapper}
+          className="p-2 rounded-full absolute right-6 top-6 text-stone-400 hover:text-slate-700 hover:bg-stone-50 transition-all"
           aria-label="Close modal"
         >
           <X size={16} />
         </button>
 
-        {/* Modal Header Section */}
-        <div className="mb-6 pr-8">
-          <div className="flex items-center gap-2 text-[#1E4631] mb-1">
+        {/* Modal Branding Header */}
+        <div className="mb-6 pr-8 select-none">
+          <div className="flex items-center gap-2 text-[#2D6A4F] mb-1">
             <Compass size={18} />
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+            <h2 className="text-xl font-bold text-slate-800 tracking-tight">
               Add Journey Event
             </h2>
           </div>
-          <p className="text-xs text-gray-400 leading-relaxed">
+          <p className="text-xs text-stone-400 leading-relaxed">
             Pin an important stop, meal coordination, or itinerary milestone onto your shared crew timeline.
           </p>
         </div>
 
-        {/* Modal Main Core Input Form */}
+        {/* Form Grid Area Structure */}
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          {/* Input block: Event Name */}
+          {/* Form input item block: Event Title */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
               Event Details
             </label>
             <input
               type="text"
               name="title"
-              placeholder="e.g., Temple Tour or Group Dinner"
+              placeholder="e.g., Rest in Hotel or Group Dinner"
               value={formData.title}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 bg-gray-50/50 border rounded-xl text-sm transition-all focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 outline-none text-gray-800 placeholder-gray-400 ${
-                errors.title ? "border-red-300 focus:border-red-400" : "border-gray-200"
+              className={`w-full px-4 py-2.5 bg-[#FAF8F5] border rounded-xl text-sm outline-none text-slate-800 placeholder-stone-400 focus:bg-white focus:border-[#2D6A4F] transition-all ${
+                errors.title ? "border-rose-300 focus:border-rose-400" : "border-[#EFE9DC]"
               }`}
             />
             {errors.title && (
-              <p className="text-red-500 text-[11px] font-medium flex items-center gap-1">
+              <p className="text-rose-600 text-[11px] font-semibold flex items-center gap-1">
                 <AlertCircle size={12} /> {errors.title}
               </p>
             )}
           </div>
 
-          {/* Input block: Location */}
+          {/* Form input item block: Location String */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <MapPin size={13} className="text-gray-400" /> Location
+            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+              <MapPin size={13} className="text-stone-400" /> Location
             </label>
             <input
               type="text"
               name="location"
-              placeholder="e.g., Vrindavan ISKCON Temple"
+              placeholder="e.g., Vrindavan"
               value={formData.location}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 bg-gray-50/50 border rounded-xl text-sm transition-all focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 outline-none text-gray-800 placeholder-gray-400 ${
-                errors.location ? "border-red-300 focus:border-red-400" : "border-gray-200"
+              className={`w-full px-4 py-2.5 bg-[#FAF8F5] border rounded-xl text-sm outline-none text-slate-800 placeholder-stone-400 focus:bg-white focus:border-[#2D6A4F] transition-all ${
+                errors.location ? "border-rose-300 focus:border-rose-400" : "border-[#EFE9DC]"
               }`}
             />
             {errors.location && (
-              <p className="text-red-500 text-[11px] font-medium flex items-center gap-1">
+              <p className="text-rose-600 text-[11px] font-semibold flex items-center gap-1">
                 <AlertCircle size={12} /> {errors.location}
               </p>
             )}
           </div>
 
-          {/* Input block: Schedule Timestamp */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <Calendar size={13} className="text-gray-400" /> Date & Time
-            </label>
-            <input
-              type="datetime-local"
-              name="dateTime"
-              value={formData.dateTime}
-              onChange={handleChange}
-              className={`w-full px-4 py-2.5 bg-gray-50/50 border rounded-xl text-sm transition-all focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 outline-none text-gray-700 ${
-                errors.dateTime ? "border-red-300 focus:border-red-400" : "border-gray-200"
-              }`}
-            />
+          {/* Split Custom Dropdown Section Inputs */}
+          <div className="grid grid-cols-2 gap-4">
             
-            {/* Dynamic visual range timeline reminder container tag */}
-            <div className="bg-gray-50 border border-gray-100 rounded-xl p-2.5 text-[11px] font-medium text-gray-400">
-              Trip Window Boundaries: <span className="text-gray-600 font-semibold">{tripStartFormatted} — {tripEndFormatted}</span>
+            {/* Custom Interactive Date Wrapper Block Container */}
+            <div className="space-y-1.5 relative date-picker-wrapper">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+                <Calendar size={13} className="text-stone-400" /> Event Date
+              </label>
+              
+              <button
+                type="button"
+                onClick={() => { setShowDatePicker(!showDatePicker); setShowTimePicker(false); }}
+                className={`w-full px-4 py-2.5 bg-[#FAF8F5] border rounded-xl text-sm font-semibold text-slate-700 flex items-center justify-between transition-all hover:bg-stone-50 ${
+                  errors.dateTime ? "border-rose-300" : "border-[#EFE9DC]"
+                }`}
+                style={{ minHeight: "42px" }}
+              >
+                <span>{selectedDateDisplay}</span>
+                <ChevronDown size={14} className="text-stone-400" />
+              </button>
+
+              {/* Day Selection Popover Panel Overlay */}
+              {showDatePicker && (
+                <div className="absolute left-0 mt-1.5 w-full bg-white border border-[#EFE9DC] rounded-xl shadow-xl max-h-48 overflow-y-auto py-1 z-30 animate-in fade-in slide-in-from-top-1 duration-150 scrollbar-thin">
+                  {tripDates.map((dateObj, idx) => {
+                    const year = dateObj.getFullYear();
+                    const month = (dateObj.getMonth() + 1).toString().padStart(2, "0");
+                    const day = dateObj.getDate().toString().padStart(2, "0");
+                    const fullValueString = `${year}-${month}-${day}`;
+
+                    return (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => {
+                          setDateFields({ ...dateFields, date: fullValueString });
+                          setShowDatePicker(false);
+                          if (errors.dateTime) setErrors({ ...errors, dateTime: "" });
+                        }}
+                        className="w-full px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-[#FAF8F5] hover:text-[#2D6A4F] transition-colors"
+                      >
+                        {dateObj.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
+            {/* Custom Interactive Time Wrapper Block Container */}
+            <div className="space-y-1.5 relative time-picker-wrapper">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+                <Clock size={13} className="text-stone-400" /> Start Time
+              </label>
+
+              <button
+                type="button"
+                onClick={() => { setShowTimePicker(!showTimePicker); setShowDatePicker(false); }}
+                className={`w-full px-4 py-2.5 bg-[#FAF8F5] border rounded-xl text-sm font-semibold text-slate-700 flex items-center justify-between transition-all hover:bg-stone-50 ${
+                  errors.dateTime ? "border-rose-300" : "border-[#EFE9DC]"
+                }`}
+                style={{ minHeight: "42px" }}
+              >
+                <span>{selectedTimeDisplay}</span>
+                <ChevronDown size={14} className="text-stone-400" />
+              </button>
+
+              {/* Time Interval Selector Scrollbar Menu Grid Overlay */}
+              {showTimePicker && (
+                <div className="absolute right-0 mt-1.5 w-full bg-white border border-[#EFE9DC] rounded-xl shadow-xl max-h-48 overflow-y-auto py-1 z-30 animate-in fade-in slide-in-from-top-1 duration-150 scrollbar-thin">
+                  {timeIntervals.map((tObj, idx) => (
+                    <button
+                      type="button"
+                      key={idx}
+                      onClick={() => {
+                        setDateFields({ ...dateFields, time: tObj.value });
+                        setShowTimePicker(false);
+                        if (errors.dateTime) setErrors({ ...errors, dateTime: "" });
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-[#FAF8F5] hover:text-[#2D6A4F] transition-colors"
+                    >
+                      {tObj.display}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Bounds Verification Warning Alert Banner Box */}
+          <div className="space-y-1.5">
+            <div className="bg-[#FAF8F5] border border-[#EFE9DC] rounded-xl p-3 text-[11px] font-semibold text-stone-400 select-none">
+              Trip Window Boundaries: <span className="text-slate-700 font-bold">{trip?.startDate ? new Date(trip.startDate).toLocaleDateString() : ""} — {trip?.endDate ? new Date(trip.endDate).toLocaleDateString() : ""}</span>
+            </div>
             {errors.dateTime && (
-              <p className="text-red-500 text-[11px] font-medium flex items-center gap-1">
+              <p className="text-rose-600 text-[11px] font-semibold flex items-center gap-1">
                 <AlertCircle size={12} /> {errors.dateTime}
               </p>
             )}
           </div>
 
-          {/* Input block: Description */}
+          {/* Form textarea field item block: Optional Notes/Description */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <AlignLeft size={13} className="text-gray-400" /> Description <span className="text-gray-400 normal-case font-normal ml-0.5">(Optional)</span>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+              <AlignLeft size={13} className="text-stone-400" /> Description <span className="text-stone-400 normal-case font-medium ml-0.5">(Optional)</span>
             </label>
             <textarea
               name="description"
@@ -226,26 +367,26 @@ const CreateEventModal = ({ open, onClose, trip, onCreated }) => {
               rows={3}
               value={formData.description}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm transition-all focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 outline-none text-gray-800 placeholder-gray-400 resize-none"
+              className="w-full px-4 py-2.5 bg-[#FAF8F5] border border-[#EFE9DC] rounded-xl text-sm outline-none text-slate-800 placeholder-stone-400 resize-none font-medium transition-all focus:bg-white focus:border-[#2D6A4F]"
             />
           </div>
 
-          {/* Footer Interactive Actions Toolbars */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-50 mt-6">
+          {/* Interactive Trigger Control Action Toolbars Footer Row */}
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#F5F0E6] mt-6 select-none">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors"
+              onClick={handleCloseWrapper}
+              className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-stone-400 hover:text-slate-700 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="bg-[#1E4631] hover:bg-[#153122] text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide shadow-sm transition-all active:scale-[0.98] disabled:opacity-40"
+              className="bg-gradient-to-r from-[#2D6A4F] to-[#40916C] hover:from-[#1B4332] hover:to-[#2D6A4F] text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-xs transition-all active:scale-[0.98] disabled:opacity-40"
             >
               {loading ? (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <Spinner />
                   <span>Pinning Event...</span>
                 </div>

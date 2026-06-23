@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { theme } from "../../../common/common";
-
-import { itineraryService }
-from "../../../services/itineraryService";
+import { itineraryService } from "../../../services/itineraryService";
 
 // Premium minimalistic vectors matching our unified design identity ✨
 import {
@@ -14,7 +13,9 @@ import {
   Edit2,
   Trash2,
   AlignLeft,
-  MoreVertical
+  MoreVertical,
+  Check,
+  AlertTriangle
 } from "lucide-react";
 
 const EventDrawer = ({
@@ -26,14 +27,9 @@ const EventDrawer = ({
   onDelete,
   onStatusUpdated,
 }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
 
-  const [showMenu, setShowMenu] =
-  useState(false);
-
-  const [
-  statusLoading,
-  setStatusLoading
-] = useState(false);
   // Handle Escape key closure shortcut safely
   useEffect(() => {
     const handleEscape = (e) => {
@@ -44,125 +40,50 @@ const EventDrawer = ({
   }, [onClose]);
 
   useEffect(() => {
-
-  const handleClick =
-    event => {
-
-      if (
-        !event.target.closest(
-          ".event-menu-container"
-        )
-      ) {
+    const handleClick = (event) => {
+      if (!event.target.closest(".event-menu-container")) {
         setShowMenu(false);
       }
-
     };
-
-  document.addEventListener(
-    "mousedown",
-    handleClick
-  );
-
-  return () =>
-    document.removeEventListener(
-      "mousedown",
-      handleClick
-    );
-
-}, []);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   if (!itinerary) return null;
 
   const currentUserId = currentUser?.id || currentUser?._id;
-  const currentUserIsAdmin =
-  trip?.admins?.some(
-    admin => {
+  const currentUserIsAdmin = trip?.admins?.some((admin) => {
+    const adminId = admin?._id || admin;
+    return String(adminId) === String(currentUserId);
+  });
 
-      const adminId =
-        admin?._id || admin;
-
-      return (
-        String(adminId) ===
-        String(currentUserId)
-      );
-
-    }
-  );
-  const updateStatus =
-async (newStatus) => {
-
-  try {
-
-    setStatusLoading(
-      true
-    );
-
-    await itineraryService
-      .updateItinerary({
-        itineraryId:
-          itinerary._id,
-        status:
-          newStatus
+  const updateStatus = async (newStatus) => {
+    try {
+      setStatusLoading(true);
+      await itineraryService.updateItinerary({
+        itineraryId: itinerary._id,
+        status: newStatus,
       });
 
       await onStatusUpdated?.();
+      itinerary.status = newStatus;
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setStatusLoading(false);
+    }
+  };
 
-    itinerary.status =
-      newStatus;
+  const now = new Date();
+  const eventDate = new Date(itinerary.dateTime);
 
-  } catch (error) {
+  const isCompleted = itinerary.status === "Completed";
+  const isCancelled = itinerary.status === "Cancelled";
+  const isOngoing = itinerary.status === "Upcoming" && eventDate <= now;
+  const needsReview = itinerary.needsReview;
+  const canUpdateStatus = itinerary.status === "Upcoming" && (isOngoing || needsReview);
 
-    console.log(error);
-
-  } finally {
-
-    setStatusLoading(
-      false
-    );
-
-  }
-
-};
-const now = new Date();
-
-const eventDate =
-  new Date(itinerary.dateTime);
-
-
-
-const isCompleted =
-  itinerary.status ===
-    "Completed";
-
-const isCancelled =
-  itinerary.status ===
-    "Cancelled";
-
-const isOngoing =
-  itinerary.status ===
-    "Upcoming" &&
-  eventDate <= now;
-
-const needsReview =
-  itinerary.needsReview;
-
-const canUpdateStatus =
-
-  itinerary.status ===
-  "Upcoming"
-
-  &&
-
-  (
-    isOngoing ||
-    needsReview
-  );
-
-
-  
-
-  const wasUpdated =
-    new Date(itinerary.updatedAt).getTime() - new Date(itinerary.createdAt).getTime() > 1000;
+  const wasUpdated = new Date(itinerary.updatedAt).getTime() - new Date(itinerary.createdAt).getTime() > 1000;
 
   const formattedDateTime = new Date(itinerary.dateTime).toLocaleString([], {
     month: "short",
@@ -172,435 +93,223 @@ const canUpdateStatus =
     minute: "2-digit",
   });
 
-  return (
-    <>
-      {/* Smooth Backdrop Overlay */}
+  return createPortal(
+    <div className="fixed inset-0 z-[999] overflow-hidden font-sans antialiased text-slate-900">
+      
+      {/* 1. Backdrop layer protecting color temperature warmth */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/30 backdrop-blur-xs z-40"
+        className="absolute inset-0 bg-slate-900/20 backdrop-blur-xs w-full h-full cursor-pointer"
       />
 
-      {/* Main Structural Slide Drawer Panel */}
+      {/* 2. Main Slide Drawer Sheet Panel Canvas - Pure White Base */}
       <motion.div
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 220 }}
-        className="fixed top-0 right-0 h-full w-full sm:w-[440px] bg-[#FAFAFA] border-l border-gray-200/80 shadow-2xl z-50 flex flex-col font-sans antialiased text-gray-900"
+        transition={{ type: "spring", damping: 30, stiffness: 240 }}
+        className="absolute right-0 top-0 bottom-0 h-screen w-full sm:w-[440px] bg-white border-l border-[#EFE9DC] shadow-2xl z-10 flex flex-col overflow-hidden"
       >
         
-        {/* Header Section */}
-       <div
-  className="
-  p-6
-  bg-white
-  border-b
-  border-gray-200/60
-  flex
-  items-center
-  justify-between
-  event-menu-container
-  "
->
+        {/* Header Section Row */}
+        <div className="p-6 bg-white border-b border-[#F5F0E6] flex items-center justify-between event-menu-container select-none flex-shrink-0">
+          <h2 className="text-base font-bold text-slate-800 tracking-tight">
+            Event Overview
+          </h2>
 
-  <h2
-    className="
-    text-base
-    font-bold
-    tracking-tight
-    text-gray-900
-    "
-  >
-    Event Overview
-  </h2>
+          <div className="flex items-center gap-1.5">
+            {currentUserIsAdmin && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-1.5 rounded-full text-stone-400 hover:text-slate-700 hover:bg-stone-50 transition-colors"
+                >
+                  <MoreVertical size={16} />
+                </button>
 
-  <div
-    className="
-    flex
-    items-center
-    gap-1.5
-    "
-  >
+                {showMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-[#EFE9DC] rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        onEdit?.(itinerary);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-semibold text-stone-600 hover:bg-[#FAF8F5] hover:text-[#2D6A4F] flex items-center gap-2 transition-colors"
+                    >
+                      <Edit2 size={13} />
+                      Edit Event
+                    </button>
 
-    {currentUserIsAdmin && (
-
-      <div
-        className="
-        relative
-        "
-      >
-
-        <button
-          onClick={() =>
-            setShowMenu(
-              !showMenu
-            )
-          }
-          className="
-          p-2
-          rounded-xl
-          text-gray-400
-          hover:text-gray-700
-          hover:bg-gray-50
-          "
-        >
-          <MoreVertical
-            size={16}
-          />
-        </button>
-
-        {showMenu && (
-
-          <div
-            className="
-            absolute
-            right-0
-            top-full
-            mt-2
-            w-48
-            bg-white
-            border
-            border-gray-100
-            rounded-xl
-            shadow-xl
-            overflow-hidden
-            z-50
-            "
-          >
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        onDelete?.(itinerary);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors border-t border-[#FAF8F5]"
+                    >
+                      <Trash2 size={13} />
+                      Delete Event
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <button
-              onClick={() => {
-
-                setShowMenu(
-                  false
-                );
-
-                onEdit?.(
-                  itinerary
-                );
-
-              }}
-              className="
-              w-full
-              px-4
-              py-3
-              text-left
-              text-sm
-              hover:bg-gray-50
-              flex
-              items-center
-              gap-2
-              "
+              onClick={onClose}
+              className="p-1.5 rounded-full text-stone-400 hover:text-slate-700 hover:bg-stone-50 transition-colors"
             >
-              <Edit2
-                size={14}
-              />
-              Edit Event
+              <X size={16} />
             </button>
-
-            <button
-              onClick={() => {
-
-                setShowMenu(
-                  false
-                );
-
-                onDelete?.(
-                  itinerary
-                );
-
-              }}
-              className="
-              w-full
-              px-4
-              py-3
-              text-left
-              text-sm
-              text-red-600
-              hover:bg-red-50
-              flex
-              items-center
-              gap-2
-              "
-            >
-              <Trash2
-                size={14}
-              />
-              Delete Event
-            </button>
-
           </div>
+        </div>
 
-        )}
-
-      </div>
-
-    )}
-
-    <button
-      onClick={onClose}
-      className="
-      p-2
-      rounded-xl
-      text-gray-400
-      hover:text-gray-700
-      hover:bg-gray-50
-      "
-    >
-      <X size={16}/>
-    </button>
-
-  </div>
-
-</div>
-
-        {/* Scrollable Content Container */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* Scrollable Core Meta Content Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-white scrollbar-thin">
           
-          {/* Main Title & Status Badge Block */}
-          <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-xs space-y-3">
+          {/* Box Block 1: Destination Title & Status Badge Capsule */}
+          <div className="bg-[#FAF8F5] border border-[#EFE9DC]/60 rounded-2xl p-5 shadow-2xs space-y-4">
             <div className="flex items-start justify-between gap-4">
-              <h3 className="text-lg font-bold tracking-tight text-gray-900 leading-snug">
+              <h3 className="text-base font-bold text-slate-800 tracking-tight leading-snug">
                 {itinerary.title}
               </h3>
+              
               {itinerary.status && (
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-[#1E4631]/5 text-[#1E4631] px-2.5 py-1 rounded-md flex-shrink-0">
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md border ${
+                  isCompleted ? "bg-[#E9F5ED] border-[#C1E2CE] text-[#2D6A4F]" :
+                  isCancelled ? "bg-rose-50 border-rose-100 text-rose-600" :
+                  "bg-stone-100 border-stone-200/40 text-stone-400"
+                }`}>
                   {itinerary.status}
                 </span>
               )}
             </div>
 
-            <div className="pt-2 space-y-2 text-xs font-semibold text-gray-600 border-t border-gray-50">
-              <div className="flex items-center gap-2 text-gray-500">
-                <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                <span className="truncate">{itinerary.location}</span>
+            <div className="pt-3.5 space-y-2.5 text-xs font-semibold text-stone-500 border-t border-[#EFE9DC]/30 select-none">
+              <div className="flex items-center gap-2.5">
+                <MapPin size={14} className="text-[#2D6A4F] flex-shrink-0" />
+                <span className="text-slate-700 truncate">{itinerary.location}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-500">
-                <Clock size={14} className="text-gray-400 flex-shrink-0" />
-                <span>{formattedDateTime}</span>
+              
+              <div className="flex items-center gap-2.5">
+                <Clock size={14} className="text-stone-400 flex-shrink-0" />
+                <span className="text-slate-700">{formattedDateTime}</span>
               </div>
             </div>
           </div>
 
-          {currentUserIsAdmin && (
-
-  <div
-    className="
-    bg-white
-    border
-    border-gray-200/60
-    rounded-2xl
-    p-5
-    shadow-xs
-    "
-  >
-    <h4
-      className="
-      text-[11px]
-      font-bold
-      uppercase
-      tracking-wider
-      text-gray-400
-      mb-3
-      "
-    >
-      Event Status
-    </h4>
-{currentUserIsAdmin &&
-  needsReview && (
-
-    <div
-      className="
-      bg-amber-50
-      border
-      border-amber-200
-      rounded-2xl
-      p-4
-      "
-    >
-
-      <p
-        className="
-        text-sm
-        text-amber-800
-        font-medium
-        "
-      >
-        This event has passed.
-        Please update its status.
-      </p>
-
-    </div>
-
-)}
-
-{currentUserIsAdmin &&
-  canUpdateStatus && (
-
-    <div
-      className="
-      bg-gray-50
-      border
-      border-gray-200
-      rounded-2xl
-      p-4
-      space-y-3
-      "
-    >
-
-      <button
-        onClick={() =>
-          updateStatus(
-            "Completed"
-          )
-        }
-        className="
-        w-full
-        bg-[#2F6F4E]
-        text-white
-        py-2
-        rounded-xl
-        text-sm
-        "
-      >
-        Mark Completed
-      </button>
-
-      <button
-        onClick={() =>
-          updateStatus(
-            "Cancelled"
-          )
-        }
-        className="
-        w-full
-        bg-red-500
-        text-white
-        py-2
-        rounded-xl
-        text-sm
-        "
-      >
-        Mark Cancelled
-      </button>
-
-    </div>
-
-)}
-
-{isCompleted && (
-
-  <div
-    className="
-    bg-green-50
-    border
-    border-green-200
-    rounded-2xl
-    p-4
-    "
-  >
-
-    <p
-      className="
-      text-green-700
-      text-sm
-      font-medium
-      "
-    >
-      This event has been completed.
-    </p>
-
-  </div>
-
-)}
-
-{isCancelled && (
-
-  <div
-    className="
-    bg-red-50
-    border
-    border-red-200
-    rounded-2xl
-    p-4
-    "
-  >
-
-    <p
-      className="
-      text-red-700
-      text-sm
-      font-medium
-      "
-    >
-      This event has been cancelled.
-    </p>
-
-  </div>
-
-)}
-
-  </div>
-
-)}
-
-          {/* Description Section */}
-          <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-xs space-y-2.5">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          {/* Box Block 2: Narrative Text Notes Description Container */}
+          <div className="bg-white border border-[#EFE9DC] rounded-2xl p-5 shadow-2xs space-y-3">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5 select-none">
               <AlignLeft size={13} /> Description
             </h4>
-            <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
-              {itinerary.description || "No description provided for this timeline event."}
+            <p className="text-xs font-medium text-slate-600 leading-relaxed whitespace-pre-wrap">
+              {itinerary.description || "No specific itinerary notes or descriptions provided for this stop."}
             </p>
           </div>
 
-          {/* Creator Information & Historical Log Cards */}
-          <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-xs space-y-4">
-            {/* Created By Metadata */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-600 overflow-hidden flex-shrink-0">
+          {/* Box Block 3: Context Administrative State Updates */}
+          {currentUserIsAdmin && (
+            <div className="bg-white border border-[#EFE9DC] rounded-2xl p-5 shadow-2xs select-none space-y-3.5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                Event Status Action
+              </h4>
+
+              {needsReview && (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-semibold flex items-start gap-2 animate-in fade-in duration-150">
+                  <AlertTriangle size={15} className="flex-shrink-0 mt-0.5 text-amber-500" />
+                  <div>
+                    <p className="leading-none mb-1">Passed Milestone Alert</p>
+                    <p className="text-[11px] text-amber-600 font-medium leading-tight">
+                      This event scheduled time window has elapsed. Please audit and update the status log.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {canUpdateStatus && (
+                <div className="flex gap-2.5 pt-1">
+                  <button
+                    disabled={statusLoading}
+                    onClick={() => updateStatus("Completed")}
+                    className="flex-1 py-2 bg-gradient-to-r from-[#2D6A4F] to-[#40916C] hover:from-[#1B4332] hover:to-[#2D6A4F] text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-xs transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    Mark Completed
+                  </button>
+
+                  <button
+                    disabled={statusLoading}
+                    onClick={() => updateStatus("Cancelled")}
+                    className="flex-1 py-2 bg-white hover:bg-rose-50 border border-[#EFE9DC] text-stone-500 hover:text-rose-600 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    Cancel Stop
+                  </button>
+                </div>
+              )}
+
+              {isCompleted && (
+                <div className="p-3 rounded-xl bg-[#E9F5ED] border border-[#C1E2CE] text-[#2D6A4F] text-xs font-semibold flex items-center gap-2">
+                  <Check size={14} strokeWidth={3} />
+                  <span>This itinerary event milestone has been completed.</span>
+                </div>
+              )}
+
+              {isCancelled && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold flex items-center gap-2">
+                  <X size={14} strokeWidth={3} />
+                  <span>This planned itinerary event route was cancelled.</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Box Block 4: Context Author Logs Records History Tracker */}
+          <div className="bg-white border border-[#EFE9DC] rounded-2xl p-5 shadow-2xs space-y-4">
+            <div className="flex items-center gap-3 select-none">
+              <div className="w-8 h-8 rounded-full bg-stone-50 border border-[#EFE9DC] flex items-center justify-center text-stone-600 overflow-hidden flex-shrink-0">
                 {itinerary.createdBy?.profilePicture ? (
                   <img src={itinerary.createdBy.profilePicture} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-[10px] font-bold uppercase text-gray-400">
-                    {itinerary.createdBy?.name?.[0]}
+                  <span className="text-[10px] font-bold uppercase text-stone-400">
+                    {itinerary.createdBy?.name?.[0] || "T"}
                   </span>
                 )}
               </div>
+              
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 leading-none mb-1">
-                  Created By
+                <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 leading-none mb-1">
+                  Published By
                 </p>
-                <p className="text-xs font-bold text-gray-800 leading-none">
-                  {itinerary.createdBy?.name || "Group Traveler"}
+                <p className="text-xs font-bold text-slate-800 leading-none">
+                  {itinerary.createdBy?.name || "Group Member"}
                 </p>
               </div>
             </div>
 
-            {/* Timestamps Logs */}
-            <div className="pt-3 border-t border-gray-50 grid grid-cols-2 gap-4 text-[11px] font-semibold text-gray-500">
+            {/* Micro Metadata Timestamp Streams */}
+            <div className="pt-3.5 border-t border-[#FAF8F5] grid grid-cols-2 gap-4 text-[10px] font-bold uppercase tracking-wider text-stone-400 select-none">
               <div className="space-y-1">
-                <p className="text-gray-400 font-medium flex items-center gap-1">
-                  <History size={12} /> Published
+                <p className="font-semibold flex items-center gap-1 text-stone-400 normal-case">
+                  <History size={12} className="text-stone-300" /> Created Log
                 </p>
-                <p className="text-gray-700 font-bold">
-                  {new Date(itinerary.createdAt).toLocaleDateString()}
+                <p className="text-slate-700 font-extrabold">
+                  {new Date(itinerary.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                 </p>
               </div>
 
               {wasUpdated && (
                 <div className="space-y-1 animate-in fade-in duration-200">
-                  <p className="text-gray-400 font-medium flex items-center gap-1">
-                    <History size={12} /> Last Modified
+                  <p className="font-semibold flex items-center gap-1 text-stone-400 normal-case">
+                    <History size={12} className="text-stone-300" /> Last Modified
                   </p>
-                  <p className="text-gray-700 font-bold">
-                    {new Date(itinerary.updatedAt).toLocaleDateString()}
-                  </p>
-                </div>
+                  <p className="text-slate-700 font-extrabold">
+                    {new Date(itinerary.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                </p>
+              </div>
               )}
             </div>
           </div>
@@ -608,7 +317,8 @@ const canUpdateStatus =
         </div>
 
       </motion.div>
-    </>
+    </div>,
+    document.body
   );
 };
 

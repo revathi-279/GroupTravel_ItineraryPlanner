@@ -1,225 +1,93 @@
 import { useEffect, useState } from "react";
+import { theme } from "../../../common/common";
+import { itineraryService } from "../../../services/itineraryService";
+import { Calendar, Clock, MapPin } from "lucide-react";
 
-import {
-  itineraryService
-}
-from "../../../services/itineraryService";
-
-import {
-  Calendar,
-  Clock,
-  MapPin
-}
-from "lucide-react";
-
-const UpcomingEventCard = ({
-  trip,
-  onViewEvent
-}) => {
-
-  const [
-    event,
-    setEvent
-  ] = useState(null);
+const UpcomingEventCard = ({ trip, onViewEvent }) => {
+  const [event, setEvent] = useState(null);
 
   useEffect(() => {
-
-    const load =
-    async () => {
-
+    const load = async () => {
       try {
+        const response = await itineraryService.getItineraries(trip._id);
+        const itineraries = response.allItineraries || [];
 
-        const response =
-          await itineraryService
-            .getItineraries(
-              trip._id
-            );
-const itineraries =
-  response.allItineraries || [];
+        const upcoming = itineraries
+          .filter((item) => item.status === "Upcoming")
+          .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))[0];
 
-const upcoming =
-  itineraries
-    .filter(
-      item =>
-        item.status ===
-        "Upcoming"
-    )
-    .sort(
-      (a, b) =>
-        new Date(
-          a.dateTime
-        ) -
-        new Date(
-          b.dateTime
-        )
-    )[0];
-
-setEvent(
-  upcoming || null
-);
-
+        setEvent(upcoming || null);
       } catch (error) {
-
         console.log(error);
-
       }
-
     };
 
     load();
-
   }, [trip]);
 
   return (
-
-    <div
-      className="
-      bg-white
-      border
-      border-gray-200/60
-      rounded-2xl
-      p-5
-      "
-    >
-
-      <h3
-        className="
-        text-xs
-        uppercase
-        tracking-widest
-        font-bold
-        text-gray-400
-        mb-5
-        "
-      >
+    <div className="bg-white border border-[#EFE9DC] rounded-3xl p-6 font-sans antialiased text-slate-900">
+      <h3 className="text-xs uppercase tracking-wider font-bold text-stone-400 mb-5 select-none">
         Next On Your Journey
       </h3>
 
       {!event ? (
-
-        <div
-          className="
-          py-8
-          text-center
-          "
-        >
-
-          <Calendar
-            size={28}
-            className="
-            mx-auto
-            text-gray-300
-            "
-          />
-
-          <p
-            className="
-            text-sm
-            text-gray-500
-            mt-3
-            "
-          >
+        /* Empty State Placeholder View */
+        <div className="text-center py-8">
+          <div className="w-12 h-12 bg-[#FAF8F5] border border-[#EFE9DC] rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Calendar size={22} className="text-stone-400" />
+          </div>
+          <p className="text-xs font-semibold text-stone-400 max-w-[220px] mx-auto leading-relaxed">
             Add itinerary events to keep your Journey organized
           </p>
-
         </div>
-
       ) : (
-
+        /* Active Upcoming Event Meta Tracker View */
         <>
-
-          <h2
-            className="
-            text-lg
-            font-semibold
-            text-gray-900
-            "
-          >
+          <h2 className="text-lg font-bold text-slate-800 tracking-tight leading-snug">
             {event.title}
           </h2>
 
-          <div
-            className="
-            mt-4
-            space-y-3
-            text-sm
-            text-gray-600
-            "
-          >
-
-            <div
-              className="
-              flex
-              items-center
-              gap-2
-              "
-            >
-              <Calendar size={15}/>
-              {
-                new Date(
-                  event.dateTime
-                ).toLocaleDateString()
-              }
+          <div className="mt-5 space-y-3 text-xs font-semibold text-stone-500">
+            <div className="flex items-center gap-2.5">
+              <Calendar size={14} className="text-stone-400 flex-shrink-0" />
+              <span className="text-slate-700">
+                {new Date(event.dateTime).toLocaleDateString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
             </div>
 
-            <div
-              className="
-              flex
-              items-center
-              gap-2
-              "
-            >
-              <Clock size={15}/>
-              {
-                new Date(
-                  event.dateTime
-                ).toLocaleTimeString(
-                  [],
-                  {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  }
-                )
-              }
+            <div className="flex items-center gap-2.5">
+              <Clock size={14} className="text-stone-400 flex-shrink-0" />
+              <span className="text-slate-700">
+                {new Date(event.dateTime).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
             </div>
 
-            <div
-              className="
-              flex
-              items-center
-              gap-2
-              "
-            >
-              <MapPin size={15}/>
-              {event.location}
+            <div className="flex items-center gap-2.5">
+              <MapPin size={14} className="text-[#2D6A4F] flex-shrink-0" />
+              <span className="text-slate-700 truncate">{event.location}</span>
             </div>
 
-            <button
-  onClick={() =>
-    onViewEvent?.(event)
-  }
-  className="
-  mt-5
-  text-sm
-  font-semibold
-  text-[#1E4631]
-  hover:text-[#153122]
-  transition
-  "
->
-  View Details →
-</button>
-
+            <div className="pt-2">
+              <button
+                onClick={() => onViewEvent?.(event)}
+                className="text-xs font-bold text-[#2D6A4F] hover:text-[#1B4332] flex items-center gap-1 transition-colors"
+              >
+                View Details →
+              </button>
+            </div>
           </div>
-
         </>
-
       )}
-
     </div>
-
   );
-
 };
 
 export default UpcomingEventCard;

@@ -1,18 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { expenseService } from "../../../services/expenseService";
 import { theme } from "../../../common/common";
 import Spinner from "../../common/Spinner";
 
 // Premium minimalistic vectors matching our corporate design identity ✨
-import { X, Wallet, Users, Coins, Plus, AlertCircle, FileText } from "lucide-react";
+import { X, Wallet, Users, Coins, Plus, AlertCircle, FileText, ChevronDown, CheckSquare, Square } from "lucide-react";
 
 const CreateExpenseModal = ({ open, onClose, trip, onCreated }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  
+  // Custom Dropdown Open/Close Toggle Indexes
+  const [showParticipantsDropdown, setShowParticipantsDropdown] = useState(false);
+  const [activePayerDropdownIdx, setActivePayerDropdownIdx] = useState(null);
+
+  const modalFormRef = useRef(null);
+
   const [formData, setFormData] = useState({
     title: "",
     notes: "",
-    payers: [{ user: "", amount: "" }],
+    payers: [{ user: "", userName: "Select Crew Member", amount: "" }],
     participants: [],
   });
 
@@ -22,12 +29,29 @@ const CreateExpenseModal = ({ open, onClose, trip, onCreated }) => {
       setFormData({
         title: "",
         notes: "",
-        payers: [{ user: "", amount: "" }],
+        payers: [{ user: "", userName: "Select Crew Member", amount: "" }],
         participants: [],
       });
       setErrors({});
+      setShowParticipantsDropdown(false);
+      setActivePayerDropdownIdx(null);
     }
   }, [open]);
+
+  // Handle clicking outside custom dropdown sheets to close them safely
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest(".participants-wrapper")) {
+        setShowParticipantsDropdown(false);
+      }
+      if (!e.target.closest(".payer-dropdown-wrapper")) {
+        setActivePayerDropdownIdx(null);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   // Handle Escape key modal closure shortcuts safely
   useEffect(() => {
@@ -42,30 +66,40 @@ const CreateExpenseModal = ({ open, onClose, trip, onCreated }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const updatePayer = (index, field, value) => {
+  const updatePayerValue = (index, field, value) => {
     const updatedPayers = [...formData.payers];
     if (updatedPayers[index]) {
       updatedPayers[index][field] = value;
-      setFormData((prev) => ({
-        ...prev,
-        payers: updatedPayers,
-      }));
+      setFormData((prev) => ({ ...prev, payers: updatedPayers }));
     }
+  };
+
+  const selectPayerUser = (index, userId, userName) => {
+    const updatedPayers = [...formData.payers];
+    if (updatedPayers[index]) {
+      updatedPayers[index].user = userId;
+      updatedPayers[index].userName = userName;
+      setFormData((prev) => ({ ...prev, payers: updatedPayers }));
+    }
+    setActivePayerDropdownIdx(null);
   };
 
   const addPayer = () => {
     setFormData((prev) => ({
       ...prev,
-      payers: [...prev.payers, { user: "", amount: "" }],
+      payers: [...prev.payers, { user: "", userName: "Select Crew Member", amount: "" }],
+    }));
+  };
+
+  const removePayer = (index) => {
+    if (formData.payers.length === 1) return;
+    setFormData((prev) => ({
+      ...prev,
+      payers: prev.payers.filter((_, idx) => idx !== index),
     }));
   };
 
@@ -84,13 +118,23 @@ const CreateExpenseModal = ({ open, onClose, trip, onCreated }) => {
     }
   };
 
+  const selectAllParticipants = () => {
+    const allIds = (trip?.members || []).map(m => m._id);
+    setFormData(prev => ({ ...prev, participants: allIds }));
+    if (errors.participants) setErrors(prev => ({ ...prev, participants: "" }));
+  };
+
+  const clearAllParticipants = () => {
+    setFormData(prev => ({ ...prev, participants: [] }));
+  };
+
   const validate = () => {
     const newErrors = {};
     if (!formData.title.trim()) {
-      newErrors.title = "Expense name tracking descriptor is required";
+      newErrors.title = "Expense name is required";
     }
     if (formData.participants.length === 0) {
-      newErrors.participants = "Select at least one participant sharing this expense payload";
+      newErrors.participants = "Select at least one beneficiary split user";
     }
     return newErrors;
   };
@@ -107,12 +151,11 @@ const CreateExpenseModal = ({ open, onClose, trip, onCreated }) => {
     try {
       setLoading(true);
       
-      // Sanitize payers to filter out incomplete fields and convert numerical objects safely
       const validPayers = formData.payers
-        .filter((p) => p.user && p.amount)
+        .filter((p) => p.user && p.amount.trim())
         .map((p) => ({
           user: p.user,
-          amount: Number(p.amount) || 0,
+          amount: parseFloat(p.amount.replace(/[^0-9.]/g, "")) || 0, // Cleans and parses string values safely
         }));
 
       await expenseService.addExpense({
@@ -133,109 +176,141 @@ const CreateExpenseModal = ({ open, onClose, trip, onCreated }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" ref={modalFormRef}>
       {/* Dimmed Overlay Backdrop */}
-      <div
-        onClick={onClose}
-        className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-      />
+      <div onClick={onClose} className="absolute inset-0 bg-slate-900/20 backdrop-blur-xs transition-opacity" />
 
-      {/* Main Structural Modal Content Layout Box */}
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col max-h-[85vh] z-10 font-sans antialiased text-gray-900 animate-in fade-in zoom-in-95 duration-150">
+      {/* Main Structural Modal Content Layout Box - Pure White Base */}
+      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-[#EFE9DC] flex flex-col max-h-[85vh] z-10 font-sans antialiased text-slate-900 animate-in fade-in zoom-in-95 duration-150">
         
         {/* Absolute Top-Right Close Shortcut Action Trigger Button */}
         <button
           onClick={onClose}
-          className="absolute right-6 top-6 p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all"
+          className="absolute right-6 top-6 p-2 rounded-full text-stone-400 hover:text-slate-700 hover:bg-stone-50 transition-all"
           aria-label="Close modal"
         >
           <X size={16} />
         </button>
 
         {/* Modal Header Typography Block */}
-        <div className="p-6 md:p-8 pb-4 border-b border-gray-100">
-          <div className="flex items-center gap-2 text-[#1E4631] mb-1">
+        <div className="p-6 md:p-8 pb-4 border-b border-[#F5F0E6] select-none flex-shrink-0">
+          <div className="flex items-center gap-2 text-[#2D6A4F] mb-1">
             <Wallet size={18} />
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-              Add shared Expense
+            <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+              Add Shared Expense
             </h2>
           </div>
-          <p className="text-xs text-gray-400 leading-relaxed">
+          <p className="text-xs text-stone-400 leading-relaxed">
             Log bills, accommodation invoices, or ticket values to balance accounts across your trip group cleanly.
           </p>
         </div>
 
         {/* Scrollable Dynamic Form Component */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-5 scrollbar-thin">
           
           {/* Section 1: Core Bill Identifiers */}
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
                 Expense Description
               </label>
               <input
                 type="text"
                 name="title"
-                placeholder="e.g., Beach resort stay or Fuel refill"
+                placeholder="e.g., Jewelleries, Beach Resort, or Dinner split"
                 value={formData.title}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 bg-gray-50/50 border rounded-xl text-sm transition-all focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 outline-none text-gray-800 placeholder-gray-400 ${
-                  errors.title ? "border-red-300 focus:border-red-400" : "border-gray-200"
+                className={`w-full px-4 py-2.5 bg-[#FAF8F5] border rounded-xl text-sm outline-none text-slate-800 placeholder-stone-400 focus:bg-white focus:border-[#2D6A4F] transition-all ${
+                  errors.title ? "border-rose-300 focus:border-rose-400" : "border-[#EFE9DC]"
                 }`}
               />
               {errors.title && (
-                <p className="text-red-500 text-[11px] font-medium flex items-center gap-1">
+                <p className="text-rose-600 text-[11px] font-semibold flex items-center gap-1">
                   <AlertCircle size={12} /> {errors.title}
                 </p>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                <FileText size={13} className="text-gray-400" /> Reference Notes <span className="text-gray-400 normal-case font-normal ml-0.5">(Optional)</span>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5">
+                <FileText size={13} className="text-stone-400" /> Reference Notes <span className="text-stone-400 normal-case font-medium ml-0.5">(Optional)</span>
               </label>
               <textarea
                 name="notes"
-                placeholder="Add split notes, payment vendor data, or ledger instructions..."
+                placeholder="Add split guidelines, store location info, or ledger records..."
                 rows={2}
                 value={formData.notes}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-sm transition-all focus:bg-white focus:border-[#1E4631] focus:ring-2 focus:ring-[#1E4631]/5 outline-none text-gray-800 placeholder-gray-400 resize-none"
+                className="w-full px-4 py-2.5 bg-[#FAF8F5] border border-[#EFE9DC] rounded-xl text-sm outline-none text-slate-800 placeholder-stone-400 focus:bg-white focus:border-[#2D6A4F] resize-none font-medium transition-all"
               />
             </div>
           </div>
 
-          {/* Section 2: Payer Allocations Track */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <Coins size={13} className="text-gray-400" /> Payer Details
+          {/* Section 2: Premium Custom Dropdown Payers Area Block */}
+          <div className="space-y-3 pt-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5 select-none">
+              <Coins size={13} className="text-stone-400" /> Payer Details
             </label>
             
             <div className="space-y-2.5">
               {formData.payers.map((payer, index) => (
-                <div key={index} className="flex items-center gap-3 animate-in fade-in slide-in-from-top-1 duration-100">
-                  <select
-                    value={payer.user}
-                    onChange={(e) => updatePayer(index, "user", e.target.value)}
-                    className="flex-1 px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:bg-white focus:border-[#1E4631] outline-none"
-                  >
-                    <option value="">Select Crew Member</option>
-                    {(trip?.members || []).map((member) => (
-                      <option key={member._id} value={member._id}>
-                        {member.name}
-                      </option>
-                    ))}
-                  </select>
+                <div key={index} className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-100 relative payer-dropdown-wrapper">
+                  
+                  {/* Premium Custom Selection Block Field */}
+                  <div className="flex-1 relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActivePayerDropdownIdx(activePayerDropdownIdx === index ? null : index);
+                        setShowParticipantsDropdown(false);
+                      }}
+                      className="w-full px-4 py-2.5 bg-[#FAF8F5] border border-[#EFE9DC] rounded-xl text-xs font-bold text-slate-700 flex items-center justify-between transition-all hover:bg-stone-50"
+                      style={{ minHeight: "40px" }}
+                    >
+                      <span className={payer.user ? "text-slate-800" : "text-stone-400"}>{payer.userName}</span>
+                      <ChevronDown size={14} className="text-stone-400 flex-shrink-0 pl-1" />
+                    </button>
 
+                    {/* Payers Choice Dropdown Popover */}
+                    {activePayerDropdownIdx === index && (
+                      <div className="absolute left-0 mt-1.5 w-full bg-white border border-[#EFE9DC] rounded-xl shadow-xl max-h-40 overflow-y-auto py-1 z-30 animate-in fade-in slide-in-from-top-1 duration-150 scrollbar-thin">
+                        {(trip?.members || []).map((member) => (
+                          <button
+                            type="button"
+                            key={member._id}
+                            onClick={() => selectPayerUser(index, member._id, member.name)}
+                            className="w-full px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-[#FAF8F5] hover:text-[#2D6A4F] transition-colors"
+                          >
+                            {member.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Clean Text-Based Amount Field (No Increment Arrows!) */}
                   <input
-                    type="number"
-                    step="any"
-                    placeholder="Amount Paid (₹)"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Amount (₹)"
                     value={payer.amount}
-                    onChange={(e) => updatePayer(index, "amount", e.target.value)}
-                    className="w-40 px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:bg-white focus:border-[#1E4631] outline-none placeholder-gray-400"
+                    onChange={(e) => {
+                      const cleanVal = e.target.value.replace(/[^0-9.]/g, ""); // Strings input lock validation mask
+                      updatePayerValue(index, "amount", cleanVal);
+                    }}
+                    className="w-36 px-4 py-2.5 bg-[#FAF8F5] border border-[#EFE9DC] rounded-xl text-xs font-extrabold text-slate-800 outline-none placeholder-stone-400 focus:bg-white focus:border-[#2D6A4F] transition-all"
                   />
+
+                  {formData.payers.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removePayer(index)}
+                      className="p-2 text-stone-300 hover:text-rose-600 transition-colors"
+                      title="Remove line"
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -243,61 +318,92 @@ const CreateExpenseModal = ({ open, onClose, trip, onCreated }) => {
             <button
               type="button"
               onClick={addPayer}
-              className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-[#1E4631] hover:text-[#153122] bg-[#1E4631]/5 hover:bg-[#1E4631]/10 px-3 py-1.5 rounded-lg transition-all"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2D6A4F] hover:text-[#1B4332] bg-[#FAF8F5] border border-[#EFE9DC] px-3 py-1.5 rounded-xl transition-all shadow-2xs mt-1 select-none"
             >
               <Plus size={13} strokeWidth={2.5} />
-              <span>Add another payer splitting</span>
+              <span>Split multiple payers</span>
             </button>
           </div>
 
-          {/* Section 3: Shared Participants Grid Selectors */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <Users size={13} className="text-gray-400" /> Split Beneficiaries (Who is sharing this bill?)
+          {/* Section 3: Shared Participants Premium Dropdown Matrix */}
+          <div className="space-y-1.5 pt-1 relative participants-wrapper">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5 select-none">
+              <Users size={13} className="text-stone-400" /> Split Beneficiaries
             </label>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {(trip?.members || []).map((member) => {
-                const isChecked = formData.participants.includes(member._id);
-                return (
-                  <div
-                    key={member._id}
-                    onClick={() => toggleParticipant(member._id)}
-                    className={`p-3 rounded-xl border text-xs font-bold tracking-tight text-center transition-all cursor-pointer select-none ${
-                      isChecked
-                        ? "border-[#1E4631] bg-[#1E4631]/[0.02] text-[#1E4631]"
-                        : "border-gray-200 bg-gray-50/30 text-gray-600 hover:border-gray-300 hover:bg-gray-50/60"
-                    }`}
-                  >
-                    {member.name}
-                  </div>
-                );
-              })}
-            </div>
-            
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowParticipantsDropdown(!showParticipantsDropdown);
+                setActivePayerDropdownIdx(null);
+              }}
+              className={`w-full px-4 py-2.5 bg-[#FAF8F5] border rounded-xl text-sm font-semibold text-slate-700 flex items-center justify-between transition-all hover:bg-stone-50 ${
+                errors.participants ? "border-rose-300" : "border-[#EFE9DC]"
+              }`}
+              style={{ minHeight: "42px" }}
+            >
+              <span className={formData.participants.length > 0 ? "text-slate-800" : "text-stone-400"}>
+                {formData.participants.length === 0 
+                  ? "Select who shares this bill..." 
+                  : `${formData.participants.length} Crew members selected`}
+              </span>
+              <ChevronDown size={14} className="text-stone-400" />
+            </button>
+
+            {/* Premium Multi-Select Checkbox Dropdown Box Overlay */}
+            {showParticipantsDropdown && (
+              <div className="absolute left-0 mt-1.5 w-full bg-white border border-[#EFE9DC] rounded-xl shadow-xl z-30 flex flex-col max-h-56 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="p-2 border-b border-[#FAF8F5] bg-[#FAF8F5]/50 flex items-center justify-between gap-4 text-[10px] font-bold uppercase tracking-wider select-none">
+                  <button type="button" onClick={selectAllParticipants} className="text-[#2D6A4F] hover:underline">Select All</button>
+                  <button type="button" onClick={clearAllParticipants} className="text-stone-400 hover:underline">Clear Selection</button>
+                </div>
+
+                <div className="overflow-y-auto py-1 divide-y divide-[#FAF8F5] scrollbar-thin">
+                  {(trip?.members || []).map((member) => {
+                    const isChecked = formData.participants.includes(member._id);
+                    return (
+                      <button
+                        type="button"
+                        key={member._id}
+                        onClick={() => toggleParticipant(member._id)}
+                        className="w-full px-4 py-2.5 flex items-center justify-between text-xs font-semibold text-slate-700 hover:bg-[#FAF8F5] transition-colors group"
+                      >
+                        <span className={`transition-colors ${isChecked ? "text-[#2D6A4F]" : "text-slate-700"}`}>
+                          {member.name}
+                        </span>
+                        <div className={`transition-colors ${isChecked ? "text-[#2D6A4F]" : "text-stone-300 group-hover:text-stone-400"}`}>
+                          {isChecked ? <CheckSquare size={16} /> : <Square size={16} />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {errors.participants && (
-              <p className="text-red-500 text-[11px] font-medium flex items-center gap-1 mt-1.5">
+              <p className="text-rose-600 text-[11px] font-semibold flex items-center gap-1 pt-1">
                 <AlertCircle size={12} /> {errors.participants}
               </p>
             )}
           </div>
 
-          {/* Footer Interactive Actions Utility Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-5 border-t border-gray-100 mt-6">
+          {/* Footer Interactive Actions Section Control Row */}
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#F5F0E6] mt-6 select-none flex-shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-gray-700 transition-colors"
+              className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-stone-400 hover:text-slate-700 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !formData.title.trim() || formData.participants.length === 0}
-              className="bg-[#1E4631] hover:bg-[#153122] text-white px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wide shadow-sm transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+              className="bg-gradient-to-r from-[#2D6A4F] to-[#40916C] hover:from-[#1B4332] hover:to-[#2D6A4F] text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-xs transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
             >
               {loading ? (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <Spinner />
                   <span>Logging Sheet...</span>
                 </div>

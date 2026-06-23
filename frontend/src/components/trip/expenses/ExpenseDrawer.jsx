@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { theme } from "../../../common/common";
 
@@ -45,67 +46,69 @@ const ExpenseDrawer = ({
 
   const currentUserId = currentUser?.id || currentUser?._id;
   const isAdmin = trip?.admins?.some(
-    (admin) => admin._id?.toString() === currentUserId?.toString()
+    (admin) => {
+      const adminId = admin?._id || admin;
+      return String(adminId) === String(currentUserId);
+    }
   );
 
-  return (
-    <>
-      {/* Smooth Backdrop Overlay */}
+  return createPortal(
+    <div className="fixed inset-0 z-[999] overflow-hidden font-sans antialiased text-slate-900">
+      
+      {/* 1. Backdrop layer protecting layout color temperature stability */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/30 backdrop-blur-xs z-40"
+        className="absolute inset-0 bg-slate-900/20 backdrop-blur-xs w-full h-full cursor-pointer"
       />
 
-      {/* Main Structural Slide Drawer Panel */}
+      {/* 2. Main Slide Drawer Sheet Panel Canvas - Pure White Base */}
       <motion.div
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 220 }}
-        className="fixed top-0 right-0 h-full w-full sm:w-[440px] bg-[#FAFAFA] border-l border-gray-200/80 shadow-2xl z-50 flex flex-col font-sans antialiased text-gray-900"
+        transition={{ type: "spring", damping: 30, stiffness: 240 }}
+        className="absolute right-0 top-0 bottom-0 h-screen w-full sm:w-[440px] bg-white border-l border-[#EFE9DC] shadow-2xl flex flex-col overflow-hidden"
       >
         
-        {/* 1. Header Section with Actions and Three-Dots Menu */}
-        <div className="p-6 bg-white border-b border-gray-200/60 flex items-center justify-between relative">
-          <div className="flex items-center gap-2 text-[#1E4631]">
+        {/* Header Action Control Row Container */}
+        <div className="p-6 bg-white border-b border-[#F5F0E6] flex items-center justify-between event-menu-container select-none flex-shrink-0">
+          <div className="flex items-center gap-2 text-[#2D6A4F]">
             <CreditCard size={16} />
-            <h2 className="text-sm font-bold tracking-tight text-gray-900">
+            <h2 className="text-base font-bold text-slate-800 tracking-tight">
               Expense Overview
             </h2>
           </div>
 
-          <div className="flex items-center gap-1">
-            {/* Context Actions Menu (Three-Dots Trigger) */}
+          <div className="flex items-center gap-1.5">
+            {/* Context Actions Dropdown Toggle */}
             {isAdmin && (
               <div ref={menuRef} className="relative">
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all active:scale-95"
+                  className="p-1.5 rounded-full text-stone-400 hover:text-slate-700 hover:bg-stone-50 transition-colors"
                   aria-label="Manage expense options"
                 >
                   <MoreVertical size={16} />
                 </button>
 
-                {/* Dropdown Menu Overlay */}
+                {/* Popover Action Cards List Frame Overlay */}
                 {showMenu && (
-                  <div className="absolute right-0 mt-1.5 w-52 bg-white border border-gray-100 rounded-xl shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150 origin-top-right">
+                  <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-[#EFE9DC] rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                     <button
                       onClick={() => { onEdit?.(expense); setShowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-stone-600 hover:bg-[#FAF8F5] hover:text-[#2D6A4F] transition-colors text-left"
                     >
-                      <Edit2 size={13} className="text-gray-400" />
+                      <Edit2 size={13} />
                       <span>Modify Details</span>
                     </button>
                     
-                    <div className="border-t border-gray-50 my-1" />
-                    
                     <button
                       onClick={() => { onDelete?.(expense); setShowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50/50 transition-colors text-left"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors text-left border-t border-[#FAF8F5]"
                     >
                       <Trash2 size={13} />
                       <span>Void Ledger Item</span>
@@ -115,10 +118,10 @@ const ExpenseDrawer = ({
               </div>
             )}
 
-            {/* Default Header Close Button */}
+            {/* Standard Dismiss Trigger */}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200"
+              className="p-1.5 rounded-full text-stone-400 hover:text-slate-700 hover:bg-stone-50 transition-colors"
               aria-label="Close panel"
             >
               <X size={16} />
@@ -126,56 +129,56 @@ const ExpenseDrawer = ({
           </div>
         </div>
 
-        {/* 2. Scrollable Body Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* Scrollable Core Metadata Financials Log Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-white scrollbar-thin">
           
-          {/* Main Title & Invoice Sheet Value Block */}
-          <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-xs text-center space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500 px-2.5 py-1 rounded-md inline-block">
+          {/* Main Statement Title & Grand Total Sheet block Card */}
+          <div className="bg-[#FAF8F5] border border-[#EFE9DC]/60 rounded-2xl p-5 shadow-2xs text-center space-y-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-white border border-[#EFE9DC] text-stone-400 px-2.5 py-0.5 rounded-md inline-block select-none">
               Financial Statement
             </span>
-            <h3 className="text-base font-bold tracking-tight text-gray-800 max-w-xs mx-auto leading-snug">
+            <h3 className="text-base font-bold tracking-tight text-slate-800 max-w-xs mx-auto leading-snug break-words">
               {expense.title}
             </h3>
-            <p className="text-3xl font-black text-[#1E4631] tracking-tight pt-1">
+            <p className="text-3xl font-black text-[#2D6A4F] tracking-tight pt-0.5">
               ₹{totalAmount.toLocaleString("en-IN")}
             </p>
           </div>
 
-          {/* Reference Notes Description Block */}
+          {/* Optional Reference Notes Description Block */}
           {expense.notes && (
-            <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-xs space-y-2.5">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+            <div className="bg-white border border-[#EFE9DC] rounded-2xl p-5 shadow-2xs space-y-3">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5 select-none">
                 <FileText size={13} /> Ledger Notes
               </h4>
-              <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
+              <p className="text-xs font-medium text-slate-600 leading-relaxed whitespace-pre-wrap">
                 {expense.notes}
               </p>
             </div>
           )}
 
-          {/* Payee Splits Breakdown Block */}
-          <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-xs space-y-3.5">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          {/* Payee Allocation Funding Splits Splits Grid Card */}
+          <div className="bg-white border border-[#EFE9DC] rounded-2xl p-5 shadow-2xs space-y-4">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5 select-none">
               <Coins size={13} /> Funding Allocations
             </h4>
             
-            <div className="divide-y divide-gray-50 space-y-2.5 first:pt-0">
+            <div className="divide-y divide-[#FAF8F5] space-y-2.5 first:pt-0">
               {expense.payers?.map((payer) => (
                 <div key={payer?.user?._id || Math.random()} className="flex items-center justify-between pt-2.5 first:pt-0 text-xs font-semibold">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-600 overflow-hidden flex-shrink-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-6 h-6 rounded-full bg-stone-50 border border-[#EFE9DC] flex items-center justify-center text-stone-600 overflow-hidden flex-shrink-0 select-none">
                       {payer?.user?.profilePicture ? (
                         <img src={payer.user.profilePicture} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-[9px] font-bold uppercase text-gray-400">
+                        <span className="text-[9px] font-bold uppercase text-stone-400">
                           {payer?.user?.name?.[0] || "U"}
                         </span>
                       )}
                     </div>
-                    <span className="text-gray-700">{payer?.user?.name || "Group Traveler"}</span>
+                    <span className="text-slate-700 truncate">{payer?.user?.name || "Group Traveler"}</span>
                   </div>
-                  <span className="text-gray-900 font-extrabold">
+                  <span className="text-slate-800 font-extrabold flex-shrink-0 pl-2">
                     ₹{(Number(payer?.amount) || 0).toLocaleString("en-IN")}
                   </span>
                 </div>
@@ -183,9 +186,9 @@ const ExpenseDrawer = ({
             </div>
           </div>
 
-          {/* Split Beneficiaries Badges Block */}
-          <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-xs space-y-3">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          {/* Split Beneficiaries Capsules Badges Block */}
+          <div className="bg-white border border-[#EFE9DC] rounded-2xl p-5 shadow-2xs space-y-3.5">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1.5 select-none">
               <Users size={13} /> Split Beneficiaries
             </h4>
             
@@ -193,7 +196,7 @@ const ExpenseDrawer = ({
               {expense.participants?.map((participant) => (
                 <span
                   key={participant?._id}
-                  className="text-[10px] font-bold text-gray-600 bg-gray-50 border border-gray-200/40 px-2.5 py-1 rounded-md shadow-xs select-none"
+                  className="text-[10px] font-bold text-stone-500 bg-[#FAF8F5] border border-[#EFE9DC] px-2.5 py-1 rounded-md shadow-2xs select-none"
                 >
                   {participant?.name}
                 </span>
@@ -201,21 +204,21 @@ const ExpenseDrawer = ({
             </div>
           </div>
 
-          {/* Core System Audit Logs Block */}
-          <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-xs divide-y divide-gray-50 space-y-3">
+          {/* Audit Trail Logging Histories Card */}
+          <div className="bg-white border border-[#EFE9DC] rounded-2xl p-5 shadow-2xs divide-y divide-[#FAF8F5] space-y-3 select-none">
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-600 overflow-hidden flex-shrink-0">
+              <div className="w-7 h-7 rounded-full bg-stone-50 border border-[#EFE9DC] flex items-center justify-center text-stone-600 overflow-hidden flex-shrink-0">
                 {expense.createdBy?.profilePicture ? (
                   <img src={expense.createdBy.profilePicture} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-[9px] font-bold uppercase text-gray-400">{expense.createdBy?.name?.[0]}</span>
+                  <span className="text-[9px] font-bold uppercase text-stone-400">{expense.createdBy?.name?.[0]}</span>
                 )}
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 leading-none mb-1">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 leading-none mb-1">
                   Logged By
                 </p>
-                <p className="text-xs font-bold text-gray-700 leading-none">
+                <p className="text-xs font-bold text-slate-800 leading-none">
                   {expense.createdBy?.name || "Traveler"}
                 </p>
               </div>
@@ -223,18 +226,18 @@ const ExpenseDrawer = ({
 
             {expense.updatedBy && (
               <div className="flex items-center gap-3 pt-3 animate-in fade-in duration-200">
-                <div className="w-7 h-7 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-600 overflow-hidden flex-shrink-0">
+                <div className="w-7 h-7 rounded-full bg-stone-50 border border-[#EFE9DC] flex items-center justify-center text-stone-600 overflow-hidden flex-shrink-0">
                   {expense.updatedBy?.profilePicture ? (
                     <img src={expense.updatedBy.profilePicture} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-[9px] font-bold uppercase text-gray-400">{expense.updatedBy?.name?.[0]}</span>
+                    <span className="text-[9px] font-bold uppercase text-stone-400">{expense.updatedBy?.name?.[0]}</span>
                   )}
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 leading-none mb-1">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-stone-400 leading-none mb-1">
                     Audited By
                   </p>
-                  <p className="text-xs font-bold text-gray-700 leading-none">
+                  <p className="text-xs font-bold text-slate-800 leading-none">
                     {expense.updatedBy?.name}
                   </p>
                 </div>
@@ -244,18 +247,9 @@ const ExpenseDrawer = ({
 
         </div>
 
-        {/* 3. Redesigned Clean Action Footer */}
-        <div className="p-6 bg-white border-t border-gray-200/60">
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-gray-100 hover:bg-gray-200/70 text-gray-700 text-xs font-bold rounded-xl transition-all active:scale-[0.99]"
-          >
-            Close Profile View
-          </button>
-        </div>
-
       </motion.div>
-    </>
+    </div>,
+    document.body
   );
 };
 

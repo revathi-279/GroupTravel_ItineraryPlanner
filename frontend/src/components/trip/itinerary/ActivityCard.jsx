@@ -1,14 +1,6 @@
 import React from "react";
 import { theme } from "../../../common/common";
-
-// Premium minimalistic vectors matching our corporate design identity ✨
-import {
-  Clock,
-  MapPin,
-  User,
-  Check,
-  X,
-} from "lucide-react";
+import { Clock, MapPin, User, Check, X, AlertTriangle } from "lucide-react";
 
 const ActivityCard = ({
   id,
@@ -23,128 +15,62 @@ const ActivityCard = ({
       })
     : "Flexible";
 
-    const isCompleted =
-  activity?.status ===
-  "Completed";
+  const isCompleted = activity?.status === "Completed";
+  const isCancelled = activity?.status === "Cancelled";
 
-const isCancelled =
-  activity?.status ===
-  "Cancelled";
+  const now = new Date();
+  const eventDate = new Date(activity.dateTime);
 
+  const needsReview = activity?.needsReview;
+  const isOngoing = activity.status === "Upcoming" && eventDate <= now;
+  const isUpcoming = activity?.status === "Upcoming" && !isOngoing && !needsReview;
 
-
-const now = new Date();
-
-const eventDate =
-  new Date(activity.dateTime);
-
-
-const isToday =
-  eventDate.toDateString() ===
-  now.toDateString();
-
-  
-  const needsReview =
-  activity?.needsReview;
-const isOngoing =
-  activity.status === "Upcoming" &&
-  eventDate <= now;
-
-const isUpcoming =
-
-  activity?.status ===
-    "Upcoming"
-
-  &&
-
-  !isOngoing
-
-  &&
-
-  !needsReview;
-
-
-
-  console.log(
-  activity.title,
-  activity.status,
-  activity.dateTime,
-  isAdmin
-);
   return (
-  <div
-    id={id}
-    onClick={() => onClick?.(activity)}
-      className="
-        bg-white border border-gray-200/60 p-5 rounded-2xl shadow-xs 
-        hover:shadow-md hover:border-gray-300 cursor-pointer 
-        transition-all duration-200 font-sans antialiased flex flex-col justify-between group
-      "
+    <div
+      id={id}
+      onClick={() => onClick?.(activity)}
+      className="bg-white border border-[#EFE9DC] p-5 rounded-3xl shadow-2xs hover:shadow-sm hover:border-[#2D6A4F]/40 cursor-pointer transition-all duration-200 font-sans antialiased flex flex-col justify-between group"
     >
       <div>
-        { isAdmin && needsReview && (
+        {/* Admin Action Notice Banner */}
+        {isAdmin && needsReview && (
+          <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-start gap-2 animate-in fade-in duration-150">
+            <AlertTriangle size={14} className="flex-shrink-0 mt-0.5 text-amber-500" />
+            <div>
+              <p className="leading-none mb-1">Status Review Needed</p>
+              <p className="text-[11px] text-amber-600/90 font-medium leading-tight">
+                This event time has passed and is still marked as Upcoming.
+              </p>
+            </div>
+          </div>
+        )}
 
-  <div
-    className="
-    mb-4
-    p-3
-    rounded-xl
-    bg-amber-50
-    border
-    border-amber-200
-    "
-  >
-
-    <p
-      className="
-      text-xs
-      font-semibold
-      text-amber-700
-      "
-    >
-      Status Review Needed
-    </p>
-
-    <p
-      className="
-      text-[11px]
-      text-amber-600
-      mt-1
-      "
-    >
-      This event time has passed and is still marked as Upcoming.
-    </p>
-
-  </div>
-
-)}
-        {/* Top Header Row: Formatted Timestamp */}
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1E4631]/80 mb-2.5">
-        
-          <Clock size={13} className="text-[#1E4631]/60" />
+        {/* Card Header Row: Formatted Timestamp */}
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#2D6A4F] mb-2 select-none">
+          <Clock size={13} />
           <span>{time}</span>
         </div>
 
-        {/* Central Core Text Content */}
-        <h3 className="text-base font-bold text-gray-900 tracking-tight leading-snug group-hover:text-[#1E4631] transition-colors">
+        {/* Central Core Title Text */}
+        <h3 className="text-sm font-bold text-slate-800 tracking-tight leading-snug group-hover:text-[#2D6A4F] transition-colors">
           {activity?.title || "Untitled Activity"}
         </h3>
 
         {/* Context Location String Capsule */}
         {activity?.location && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-gray-400 mt-2">
-            <MapPin size={13} className="text-gray-300 flex-shrink-0" />
-            <span className="truncate max-w-[280px] text-gray-500">{activity.location}</span>
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-stone-400 mt-2 select-none">
+            <MapPin size={13} className="text-stone-300 flex-shrink-0" />
+            <span className="truncate max-w-[280px] text-stone-500">{activity.location}</span>
           </div>
         )}
       </div>
 
-      {/* Bottom Footer Section: Creator Information & Status Badge */}
-      <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-50">
+      {/* Bottom Footer Section: Creator Meta Info & Status Badge */}
+      <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#F5F0E6] select-none">
         
-        {/* Profile Card Fragment Row */}
+        {/* User Identity Row */}
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-6 h-6 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-600 overflow-hidden flex-shrink-0">
+          <div className="w-6 h-6 rounded-full bg-stone-50 border border-[#EFE9DC] flex items-center justify-center text-stone-600 overflow-hidden flex-shrink-0">
             {activity?.createdBy?.profilePicture ? (
               <img
                 src={activity.createdBy.profilePicture}
@@ -152,149 +78,58 @@ const isUpcoming =
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-[9px] font-bold uppercase text-gray-400">
+              <span className="text-[9px] font-bold uppercase text-stone-400">
                 {activity?.createdBy?.name?.[0] || <User size={10} />}
               </span>
             )}
           </div>
-          <span className="text-xs font-medium text-gray-400 truncate max-w-[120px]">
+          <span className="text-xs font-semibold text-stone-400 truncate max-w-[120px]">
             {activity?.createdBy?.name || "Traveler"}
           </span>
         </div>
 
-        {/* Premium Context Action/Status Pill Label Tag */}
-        <div
-  className="
-  flex
-  items-center
-  gap-2
-  "
->
+        {/* Status Pill Label Tag Group */}
+        <div className="flex items-center gap-1.5">
+          {isCompleted && (
+            <>
+              <div className="w-4 h-4 rounded-full bg-[#E9F5ED] text-[#2D6A4F] flex items-center justify-center">
+                <Check size={10} strokeWidth={3} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#2D6A4F]">
+                Completed
+              </span>
+            </>
+          )}
 
-  {isCompleted && (
+          {isOngoing && (
+            <>
+              <div className="w-2 h-2 rounded-full bg-[#2D6A4F] animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#2D6A4F]">
+                Ongoing
+              </span>
+            </>
+          )}
 
-    <>
-      <div
-        className="
-        w-5
-        h-5
-        rounded-full
-        bg-green-600
-        flex
-        items-center
-        justify-center
-        "
-      >
-        <Check
-          size={12}
-          className="text-white"
-        />
-      </div>
+          {isUpcoming && (
+            <>
+              <div className="w-2 h-2 rounded-full bg-stone-300" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                Upcoming
+              </span>
+            </>
+          )}
 
-      <span
-        className="
-        text-[10px]
-        font-bold
-        uppercase
-        text-green-700
-        "
-      >
-        Completed
-      </span>
-    </>
-
-  )}
-
-  {isOngoing && (
-
-    <>
-      <div
-  className="
-  w-5
-  h-5
-        rounded-full
-        bg-[#2F6F4E]
-        animate-pulse
-        "
-      />
-
-      <span
-        className="
-        text-[10px]
-        font-bold
-        uppercase
-        text-[#2F6F4E]
-        "
-      >
-        Ongoing
-      </span>
-    </>
-
-  )}
-
-  {isUpcoming && (
-
-    <>
-     <div
-  className="
-  w-5
-  h-5
-  rounded-full
-  border-2
-  border-gray-400
-  bg-white
-  "
-/>
-
-      <span
-        className="
-        text-[10px]
-        font-bold
-        uppercase
-        text-gray-500
-        "
-      >
-        Upcoming
-      </span>
-    </>
-
-  )}
-
-  {isCancelled && (
-
-    <>
-      <div
-        className="
-        w-5
-        h-5
-        rounded-full
-        bg-red-500
-        flex
-        items-center
-        justify-center
-        "
-      >
-        <X
-          size={12}
-          className="text-white"
-        />
-      </div>
-
-      <span
-        className="
-        text-[10px]
-        font-bold
-        uppercase
-        text-red-600
-        "
-      >
-        Cancelled
-      </span>
-    </>
-
-  )}
-
-</div>
+          {isCancelled && (
+            <>
+              <div className="w-4 h-4 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+                <X size={10} strokeWidth={3} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
+                Cancelled
+              </span>
+            </>
+          )}
+        </div>
 
       </div>
     </div>

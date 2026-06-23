@@ -41,7 +41,7 @@ const GalleryTab = ({ trip, currentUser }) => {
 
   useEffect(() => {
     fetchPhotos();
-  }, []);
+  }, [trip._id]);
 
   // Poll for background data refreshes if comment or reaction overlays are open
   useEffect(() => {
@@ -57,9 +57,9 @@ const GalleryTab = ({ trip, currentUser }) => {
   // Premium inline skeleton loader frame
   if (loading) {
     return (
-      <div className="w-full py-20 flex flex-col items-center justify-center gap-3 text-gray-400">
-        <Loader2 size={24} className="animate-spin text-[#1E4631]" />
-        <p className="text-xs font-semibold tracking-wide uppercase">
+      <div className="w-full py-24 flex flex-col items-center justify-center gap-3 text-stone-400 select-none font-sans antialiased">
+        <Loader2 size={24} className="animate-spin text-[#2D6A4F]" />
+        <p className="text-xs font-bold tracking-wider uppercase">
           Assembling media timeline...
         </p>
       </div>
@@ -67,7 +67,7 @@ const GalleryTab = ({ trip, currentUser }) => {
   }
 
   return (
-    <div className="w-full font-sans antialiased text-gray-900 space-y-6">
+    <div className="p-8 w-full max-w-5xl font-sans antialiased text-slate-900 mx-auto space-y-8">
       
       {/* Top Layout Section: Overview Headers */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -79,7 +79,7 @@ const GalleryTab = ({ trip, currentUser }) => {
         {photos.length > 0 && (
           <button
             onClick={() => setShowUpload(true)}
-            className="inline-flex items-center justify-center gap-1.5 bg-[#1E4631] hover:bg-[#153122] text-white px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide shadow-sm transition-all duration-200 active:scale-[0.98] sm:mb-1"
+            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#2D6A4F] to-[#40916C] hover:from-[#1B4332] hover:to-[#2D6A4F] text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-xs transition-all active:scale-[0.98] sm:mb-1"
           >
             <UploadCloud size={14} strokeWidth={2.5} />
             <span>Add Memories</span>
@@ -88,9 +88,9 @@ const GalleryTab = ({ trip, currentUser }) => {
       </div>
 
       {/* Main Framework Interactive Display Grid Canvas */}
-      <div className="w-full pt-2">
+      <div className="w-full">
         {photos.length === 0 ? (
-          <div className="bg-white border border-gray-200/60 border-dashed rounded-3xl p-12 shadow-xs">
+          <div className="bg-white border border-[#EFE9DC] border-dashed rounded-3xl p-12 shadow-2xs">
             <EmptyGallery onUpload={() => setShowUpload(true)} />
           </div>
         ) : (

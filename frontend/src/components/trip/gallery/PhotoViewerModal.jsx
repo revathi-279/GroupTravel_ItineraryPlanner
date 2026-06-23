@@ -21,27 +21,17 @@ const PhotoViewerModal = ({
   const [showReactions, setShowReactions] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef(null);
-const captionRef = useRef(null);
+  const captionRef = useRef(null);
 
   useEffect(() => {
+    setShowMenu(false);
+    setShowReactions(false);
+    if (!editingCaption) {
+      setCaption(photo?.caption || "");
+    }
+  }, [photo, editingCaption]);
 
-  setShowMenu(false);
-  setShowReactions(false);
-
-  if (!editingCaption) {
-
-    setCaption(
-      photo?.caption || ""
-    );
-
-  }
-
-}, [
-  photo,
-  editingCaption
-]);
-
-  // Handle Escape key closure shortcut
+  // Handle Escape key closure shortcut Safely
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === "Escape") onClose();
@@ -50,62 +40,30 @@ const captionRef = useRef(null);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
+  // Handle outside click tracking for editing captions input box frame
   useEffect(() => {
-
-  const handleCaptionOutside =
-    (event) => {
-
+    const handleCaptionOutside = (event) => {
       if (
         editingCaption &&
         captionRef.current &&
-        !captionRef.current.contains(
-          event.target
-        )
+        !captionRef.current.contains(event.target)
       ) {
-
-        setEditingCaption(
-          false
-        );
-
-        setCaption(
-          photo?.caption || ""
-        );
-
+        setEditingCaption(false);
+        setCaption(photo?.caption || "");
       }
-
     };
+    document.addEventListener("mousedown", handleCaptionOutside);
+    return () => document.removeEventListener("mousedown", handleCaptionOutside);
+  }, [editingCaption, photo]);
 
-  document.addEventListener(
-    "mousedown",
-    handleCaptionOutside
-  );
-
-  return () =>
-    document.removeEventListener(
-      "mousedown",
-      handleCaptionOutside
-    );
-
-}, [
-  editingCaption,
-  photo
-]);
-
-  // Dropdown closure hook
+  // Handle context actions hamburger dropdown outside clicks
   useEffect(() => {
     const handleClickOutside = (e) => {
-
-  if (editingCaption)
-    return;
-
-  if (
-    menuRef.current &&
-    !menuRef.current.contains(e.target)
-  ) {
-    setShowMenu(false);
-  }
-
-};
+      if (editingCaption) return;
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [editingCaption]);
@@ -117,30 +75,31 @@ const captionRef = useRef(null);
     setShowReactions(false);
   };
 
-  const isUploader = photo.uploadedBy?._id === currentUser?._id;
+  const currentUserId = currentUser?.id || currentUser?._id;
+  const isUploader = (photo.uploadedBy?._id || photo.uploadedBy) === currentUserId;
   const isAdmin = trip?.admins?.some(
-    (admin) => (admin._id || admin).toString() === currentUser?._id
+    (admin) => String(admin._id || admin) === String(currentUserId)
   );
 
   const userReaction = photo.reactions?.find(
-    (reaction) => reaction.user?._id === currentUser?._id
+    (reaction) => String(reaction.user?._id || reaction.user) === String(currentUserId)
   );
 
   const handleReaction = async (emoji) => {
     try {
       const existingReaction = photo.reactions?.find(
-        (reaction) => reaction.user?._id === currentUser?._id
+        (reaction) => String(reaction.user?._id || reaction.user) === String(currentUserId)
       );
 
       let updatedReactions = [...photo.reactions];
 
       if (existingReaction && existingReaction.emoji === emoji) {
         updatedReactions = updatedReactions.filter(
-          (reaction) => reaction.user?._id !== currentUser?._id
+          (reaction) => String(reaction.user?._id || reaction.user) !== String(currentUserId)
         );
       } else {
         updatedReactions = updatedReactions.filter(
-          (reaction) => reaction.user?._id !== currentUser?._id
+          (reaction) => String(reaction.user?._id || reaction.user) !== String(currentUserId)
         );
         updatedReactions.push({
           user: currentUser,
@@ -193,343 +152,218 @@ const captionRef = useRef(null);
     }
   };
 
-  const formatUploadDate = (
-  date
-) => {
+  const formatUploadDate = (date) => {
+    const uploaded = new Date(date);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
 
-  const uploaded =
-    new Date(date);
+    const time = uploaded.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
-  const today =
-    new Date();
-
-  const yesterday =
-    new Date();
-
-  yesterday.setDate(
-    yesterday.getDate() - 1
-  );
-
-  const time =
-    uploaded.toLocaleTimeString(
-      [],
-      {
-        hour: "numeric",
-        minute: "2-digit"
-      }
-    );
-
-  if (
-    uploaded.toDateString() ===
-    today.toDateString()
-  ) {
-    return `Today at ${time}`;
-  }
-
-  if (
-    uploaded.toDateString() ===
-    yesterday.toDateString()
-  ) {
-    return `Yesterday at ${time}`;
-  }
-
-  return uploaded.toLocaleDateString(
-    "en-IN",
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric"
+    if (uploaded.toDateString() === today.toDateString()) {
+      return `Today at ${time}`;
     }
-  ) + ` at ${time}`;
+    if (uploaded.toDateString() === yesterday.toDateString()) {
+      return `Yesterday at ${time}`;
+    }
 
-};
-
+    return uploaded.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) + ` at ${time}`;
+  };
 
   return (
-    <AnimatePresence>
+    <div className="fixed inset-0 z-[100] flex flex-col font-sans antialiased select-none">
+      
+      {/* Smooth Blurred Cinema Backdrop Overlay Background */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={() => { closeMenus(); onClose(); }}
-        className="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex flex-col font-sans antialiased"
-      >
-        {/* Core Layout Modal Window Framework Wrapper */}
-        <div onClick={(e) => e.stopPropagation()} className="w-full h-full flex flex-col">
-          
-          {/* Top Panel: Header Navigation Bar */}
-          <div className="w-full bg-gradient-to-b from-black/60 to-transparent px-6 py-4 flex items-center justify-between z-10 border-b border-white/5 bg-black/20">
+        className="absolute inset-0 bg-neutral-950/95 backdrop-blur-md w-full h-full cursor-pointer"
+      />
+
+      {/* Core Layout Modal Window Framework Content Layer */}
+      <div className="relative w-full h-full flex flex-col z-10 pointer-events-none">
         
-
-          <div
-  className="
-  w-full
-  bg-gradient-to-b
-  from-black/60
-  to-transparent
-  px-6
-  py-4
-  grid
-  grid-cols-3
-  items-center
-  border-b
-  border-white/5
-  bg-black/20
-  z-10
-  "
->
-
-  {/* Left */}
-  <div className="justify-self-start flex items-center gap-3">
-
-    <div
-      className="
-      w-9
-      h-9
-      rounded-full
-      overflow-hidden
-      bg-[#1E4631]
-      "
-    >
-      {photo.uploadedBy?.profilePicture ? (
-
-        <img
-          src={photo.uploadedBy.profilePicture}
-          alt=""
-          className="
-          w-full
-          h-full
-          object-cover
-          "
-        />
-
-      ) : (
-
-        <div
-          className="
-          w-full
-          h-full
-          flex
-          items-center
-          justify-center
-          text-white
-          text-xs
-          font-bold
-          "
-        >
-          {photo.uploadedBy?.name?.[0]}
-        </div>
-
-      )}
-    </div>
-
-    <div>
-
-      <p className="text-xs font-bold text-white">
-        {photo.uploadedBy?.name}
-      </p>
-
-      <p className="text-[10px] text-gray-400">
-        {formatUploadDate(photo.createdAt)}
-      </p>
-
-    </div>
-
-  </div>
-
-  {/* Center */}
-  <div className="justify-self-center">
-
-    {editingCaption ? (
-
-     <div
-  ref={captionRef}
-  className="
-  flex
-  items-center
-  gap-2
-  "
->
-
-        <input
-          value={caption}
-          onChange={(e) =>
-            setCaption(
-              e.target.value
-            )
-          }
-          className="
-          bg-neutral-900
-          text-white
-          text-sm
-          px-3
-          py-2
-          rounded-xl
-          "
-        />
-
-        <button
-          onClick={saveCaption}
-          className="
-          bg-[#1E4631]
-          p-2
-          rounded-lg
-          "
-        >
-          <Check size={14}/>
-        </button>
-
-      </div>
-
-    ) : (
-
-      <p
-        className="
-        text-white
-        text-sm
-        font-semibold
-        text-center
-        max-w-[500px]
-        break-words
-        "
-      >
-        {photo.caption}
-      </p>
-
-    )}
-
-  </div>
-
-  {/* Right */}
-  <div className="justify-self-end">
-
-    <button
-      onClick={onClose}
-      className="
-      p-2
-      rounded-xl
-      text-gray-400
-      hover:text-white
-      "
-    >
-      <X size={18}/>
-    </button>
-
-  </div>
-
-</div>
-
-      
-          </div>
-
-          {/* Center Panel: Primary Media View Canvas */}
-          <div className="flex-1 min-h-0 w-full flex items-center justify-center bg-black/40 p-4 relative select-none">
-            <img
-              src={photo.imageUrl}
-              alt=""
-              className="max-h-full max-w-full object-contain rounded-lg shadow-2xl animate-in fade-in zoom-in-95 duration-200"
-            />
-          </div>
-
-          {/* Bottom Panel: Dynamic Global Footer Toolbar */}
-          <div className="w-full bg-neutral-950/80 border-t border-white/5 px-6 py-4 z-10 flex items-center justify-between gap-4">
-            
-            {/* Left Frame: Context Operations Hamburger Dropdown Area */}
-            <div ref={menuRef} className="relative member-menu-container min-w-[32px]">
-              {(isUploader || isAdmin) && (
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-                >
-                  <MoreVertical size={16} />
-                </button>
-              )}
-
-              {showMenu && (
-                <div className="absolute bottom-12 left-0 w-48 bg-neutral-900 border border-white/10 rounded-xl shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150 origin-bottom-left">
-                  {isUploader && (
-                    <button
-                      onClick={() => { setEditingCaption(true); setShowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-gray-200 hover:bg-white/5 transition-colors text-left"
-                    >
-                      <Edit2 size={13} className="text-gray-400" />
-                      <span>{photo.caption ? "Edit Caption" : "Add Caption"}</span>
-                    </button>
-                  )}
-                  {(isUploader || isAdmin) && (
-                    <button
-                      onClick={() => { setShowDeleteConfirm(true); setShowMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors text-left"
-                    >
-                      <Trash2 size={13} />
-                      <span>Delete Photo</span>
-                    </button>
-                  )}
+        {/* Top Panel Header Alignment Grid row container */}
+        <div className="w-full bg-neutral-950/40 border-b border-white/5 px-6 py-4 grid grid-cols-3 items-center select-none backdrop-blur-xs pointer-events-auto">
+          
+          {/* Left Block Side: Contributor profile tokens */}
+          <div className="justify-self-start flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-[#2D6A4F] border border-white/10">
+              {photo.uploadedBy?.profilePicture ? (
+                <img
+                  src={photo.uploadedBy.profilePicture}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white text-[10px] font-black uppercase">
+                  {photo.uploadedBy?.name?.[0] || "U"}
                 </div>
               )}
             </div>
 
-            {/* Center Frame: Premium Reaction Pill Selector Stack */}
-            <div className="flex items-center gap-2 overflow-x-auto max-w-[65vw] no-scrollbar py-0.5">
-              {["❤️", "😍", "🔥", "👍"].map((emoji) => {
-                const isActive = userReaction?.emoji === emoji;
-                const count = getReactionCount(emoji);
-
-                return (
-                  <button
-                    key={emoji}
-                    onClick={() => handleReaction(emoji)}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-bold transition-all duration-150 active:scale-95 shadow-xs border ${
-                      isActive
-                        ? "bg-[#1E4631] text-white border-[#1E4631] shadow-md shadow-[#1E4631]/10"
-                        : "bg-white/5 text-white border-white/5 hover:bg-white/10 hover:border-white/10"
-                    }`}
-                  >
-                    <span>{emoji}</span>
-                    {count > 0 && <span className="text-xs font-semibold text-white/80 font-sans">{count}</span>}
-                  </button>
-                );
-              })}
+            <div className="leading-tight">
+              <p className="text-xs font-bold text-white tracking-tight">
+                {photo.uploadedBy?.name || "Traveler"}
+              </p>
+              <p className="text-[10px] font-medium text-stone-400 mt-0.5">
+                {formatUploadDate(photo.createdAt)}
+              </p>
             </div>
+          </div>
 
-            {/* Right Frame: Audit Logs Reactions Analytics Drawer Trigger */}
-            <div className="min-w-[110px] text-right">
-              {totalReactions > 0 && (
+          {/* Center Block Side: Dynamic Context Caption / Title logs text layout */}
+          <div className="justify-self-center pointer-events-auto">
+            {editingCaption ? (
+              <div ref={captionRef} className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-100">
+                <input
+                  type="text"
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  className="bg-neutral-900 border border-neutral-800 text-white text-xs font-semibold px-3 py-1.5 rounded-xl outline-none focus:border-[#2D6A4F] transition-colors"
+                  style={{ minWidth: "200px" }}
+                />
                 <button
-                  onClick={() => setShowReactions(true)}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-white transition-all hover:underline underline-offset-4 group"
+                  type="button"
+                  onClick={saveCaption}
+                  className="bg-[#2D6A4F] hover:bg-[#1B4332] text-white p-2 rounded-xl transition-all shadow-2xs active:scale-95"
                 >
-                  <span>Reactions</span>
-                  <ArrowRight size={13} className="transform group-hover:translate-x-0.5 transition-transform" />
+                  <Check size={13} strokeWidth={2.5} />
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <p className="text-white text-xs font-bold text-center max-w-[360px] md:max-w-[500px] break-words line-clamp-2 select-text px-2">
+                {photo.caption || <span className="text-stone-500 font-medium italic select-none">No caption description added</span>}
+              </p>
+            )}
+          </div>
 
+          {/* Right Block Side: Standard Exit Actions trigger */}
+          <div className="justify-self-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full text-stone-400 hover:text-white transition-all active:scale-95"
+            >
+              <X size={15} />
+            </button>
           </div>
 
         </div>
 
-        {/* Global Security Context Remove Warning Dialog Block */}
-        <ConfirmationModal
-          open={showDeleteConfirm}
-          title="Delete Photo"
-          message="This trip memory asset will be permanently removed from the group gallery database timeline."
-          confirmText="Delete"
-          onClose={() => setShowDeleteConfirm(false)}
-          onConfirm={async () => {
-            await deletePhoto();
-            setShowDeleteConfirm(false);
-          }}
-        />
+        {/* Center Canvas Area: Media Preview Element Component */}
+        <div className="flex-1 min-h-0 w-full flex items-center justify-center p-6 relative select-none">
+          <img
+            src={photo.imageUrl}
+            alt=""
+            className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl border border-white/5 animate-in fade-in zoom-in-95 duration-200"
+          />
+        </div>
 
-        {/* Dynamic Participant Breakdown Slider Panel Frame */}
-        <AnimatePresence>
-          {showReactions && (
-            <ReactionsDrawer photo={photo} onClose={() => setShowReactions(false)} />
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </AnimatePresence>
+        {/* Bottom Panel Component: Interactive Controls Footer Toolbar */}
+        <div className="w-full bg-neutral-950/80 border-t border-white/5 px-6 py-4 flex items-center justify-between gap-6 pointer-events-auto backdrop-blur-xs select-none">
+          
+          {/* Left Segment: Modifiers Hamburger Dropdown Toggles Area */}
+          <div ref={menuRef} className="relative min-w-[32px]">
+            {(isUploader || isAdmin) && (
+              <button
+                type="button"
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-1.5 bg-white/5 border border-white/5 rounded-full text-stone-400 hover:text-white hover:bg-white/10 transition-all"
+              >
+                <MoreVertical size={15} />
+              </button>
+            )}
+
+            {showMenu && (
+              <div className="absolute bottom-full mb-2 left-0 w-44 bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl py-1 overflow-hidden animate-in fade-in slide-in-from-bottom-1 duration-150 origin-bottom-left">
+                {isUploader && (
+                  <button
+                    type="button"
+                    onClick={() => { setEditingCaption(true); setShowMenu(false); }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-stone-200 hover:bg-white/5 transition-colors text-left"
+                  >
+                    <Edit2 size={13} className="text-stone-400" />
+                    <span>{photo.caption ? "Modify Caption" : "Add Caption Descriptor"}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setShowDeleteConfirm(true); setShowMenu(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors text-left border-t border-neutral-800/60"
+                >
+                  <Trash2 size={13} />
+                  <span>Remove Memory</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Center Segment: Premium Reaction Pill Capsule Selection row list stack */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 max-w-[65vw]">
+            {["❤️", "😍", "🔥", "👍"].map((emoji) => {
+              const isActive = userReaction?.emoji === emoji;
+              const count = getReactionCount(emoji);
+
+              return (
+                <button
+                  type="button"
+                  key={emoji}
+                  onClick={() => handleReaction(emoji)}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-150 active:scale-95 shadow-2xs ${
+                    isActive
+                      ? "bg-[#2D6A4F] border-[#2D6A4F] text-white shadow-md shadow-[#2D6A4F]/10"
+                      : "bg-white/5 text-white border-white/5 hover:bg-white/10 hover:border-white/10"
+                  }`}
+                >
+                  <span>{emoji}</span>
+                  {count > 0 && <span className="text-[10px] font-bold text-white/80 font-sans">{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Segment: Reactions Summary Modal Breakdown list drawer launcher Link trigger */}
+          <div className="min-w-[110px] text-right">
+            {totalReactions > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowReactions(true)}
+                className="inline-flex items-center gap-1 text-xs font-bold text-stone-400 hover:text-white transition-colors group/btn"
+              >
+                <span>View Activity</span>
+                <ArrowRight size={13} className="transform group-hover/btn:translate-x-0.5 transition-transform duration-200" />
+              </button>
+            )}
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Global Security Warning Dialog Card block layer */}
+      <ConfirmationModal
+        open={showDeleteConfirm}
+        title="Delete Photo"
+        message="This trip memory asset will be permanently removed from the group gallery database timeline."
+        confirmText="Delete"
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={async () => {
+          await deletePhoto();
+          setShowDeleteConfirm(false);
+        }}
+      />
+
+      {/* Side Profile Reactions Checklist drawer slide element layer container */}
+      <AnimatePresence>
+        {showReactions && (
+          <ReactionsDrawer photo={photo} onClose={() => setShowReactions(false)} />
+        )}
+      </AnimatePresence>
+
+    </div>
   );
 };
 

@@ -9,9 +9,9 @@ const PhotoGrid = ({ photos = [], onPhotoClick }) => {
   return (
     <div
       className="
-        columns-1 sm:columns-2 md:columns-2 lg:columns-3 xl:columns-3
-        gap-5 [column-fill:_balance] w-full mx-auto
-        animate-in fade-in duration-300 font-sans antialiased
+        columns-1 sm:columns-2 lg:columns-3 
+        gap-5 [column-fill:_balance] w-full mx-auto pb-6
+        animate-in fade-in duration-300 font-sans antialiased select-none
       "
     >
       {photos.map((photo) => (

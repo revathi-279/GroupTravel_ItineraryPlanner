@@ -1,251 +1,119 @@
-import { X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  X, 
+  MapPinned, 
+  Utensils, 
+  Backpack, 
+  CloudSun, 
+  AlertTriangle 
+} from "lucide-react";
 
-import {
-  MapPinned,
-  Utensils,
-  Backpack,
-  CloudSun,
-  AlertTriangle
-}
-from "lucide-react";
-
-import { motion, AnimatePresence }
-from "framer-motion";
-
-const Section = ({
-  icon,
-  title,
-  items
-}) => {
-
-  if (
-    !items ||
-    items.length === 0
-  ) {
-    return null;
-  }
+const Section = ({ icon, title, items }) => {
+  if (!items || items.length === 0) return null;
 
   return (
-
-    <div>
-
-      <div
-        className="
-        flex
-        items-center
-        gap-2
-        mb-3
-        "
-      >
-
-        {icon}
-
-        <h3
-          className="
-          font-semibold
-          text-[#1E4631]
-          "
-        >
+    <div className="select-none animate-in fade-in slide-in-from-top-1 duration-200">
+      <div className="flex items-center gap-2 mb-3.5">
+        <div className="text-[#2D6A4F]">{icon}</div>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400">
           {title}
         </h3>
-
       </div>
 
-      <div
-        className="
-        space-y-2
-        "
-      >
+      <div className="space-y-2.5">
+        {items.map((item, index) => (
+          <div
+            key={index}
+            className="text-xs font-semibold text-slate-700 bg-[#FAF8F5] border border-[#EFE9DC] rounded-xl p-3.5 leading-relaxed shadow-2xs"
+          >
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
-        {items.map(
-          (
-            item,
-            index
-          ) => (
+const TravelInsightsDrawer = ({ open, onClose, insights }) => {
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[999] overflow-hidden font-sans antialiased text-slate-900">
+          
+          {/* 1. Backdrop layer protecting color temperature warmth */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-slate-900/20 backdrop-blur-xs w-full h-full cursor-pointer"
+          />
 
-            <div
-              key={index}
-              className="
-              text-sm
-              text-gray-600
-              bg-[#F7F9F8]
-              border
-              border-[#E8EFEA]
-              rounded-xl
-              p-3
-              "
-            >
-              {item}
+          {/* 2. Sliding Panel Content Sheet Box - Pure White Base */}
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 240 }}
+            className="absolute right-0 top-0 bottom-0 h-screen w-full sm:w-[520px] bg-white border-l border-[#EFE9DC] shadow-2xl flex flex-col overflow-hidden"
+          >
+            
+            {/* Header Control Row */}
+            <div className="flex items-center justify-between p-6 border-b border-[#F5F0E6] bg-white select-none flex-shrink-0">
+              <h2 className="text-base font-bold text-slate-800 tracking-tight">
+                Travel Insights
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-full text-stone-400 hover:text-slate-700 hover:bg-stone-50 transition-all"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-          )
-        )}
+            {/* Content Display Scroll Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-white scrollbar-thin">
+              
+              <Section
+                icon={<MapPinned size={15} />}
+                title="Recommended Places"
+                items={insights?.places}
+              />
 
-      </div>
+              <Section
+                icon={<Utensils size={15} />}
+                title="Food To Try"
+                items={insights?.food}
+              />
 
-    </div>
+              <Section
+                icon={<Backpack size={15} />}
+                title="Packing Tips"
+                items={insights?.packing}
+              />
 
-  );
+              <Section
+                icon={<CloudSun size={15} />}
+                title="Weather Notes"
+                items={insights?.weather}
+              />
 
-};
-const TravelInsightsDrawer = ({
-  open,
-  onClose,
-  insights
-}) => {
+              <Section
+                icon={<AlertTriangle size={15} className="text-rose-500" />}
+                title="Travel Warnings"
+                items={insights?.warnings}
+              />
 
-  return (
+            </div>
 
-    <AnimatePresence>
-
-    {open && (
-
-    <>
-
-     <motion.div
-  onClick={onClose}
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  exit={{ opacity: 0 }}
-  className="
-  fixed
-  inset-0
-  bg-black/40
-  z-40
-  "
-/>
-
-      <motion.div
-  initial={{
-    x: "100%"
-  }}
-  animate={{
-    x: 0
-  }}
-  exit={{
-    x: "100%"
-  }}
-  transition={{
-    duration: 0.25,
-    ease: "easeOut"
-  }}
-  className="
-  fixed
-  right-0
-  top-0
-  h-screen
-  w-[520px]
-  bg-white
-  shadow-2xl
-  z-50
-  flex
-  flex-col
-  "
->
-
-        <div
-          className="
-          flex
-          items-center
-          justify-between
-          p-6
-          border-b
-          "
-        >
-
-          <h2
-            className="
-            text-lg
-            font-bold
-            "
-          >
-            Travel Insights
-          </h2>
-
-          <button
-            onClick={onClose}
-          >
-            <X size={20}/>
-          </button>
-
+          </motion.div>
         </div>
-
-        <div
-          className="
-          flex-1
-          overflow-y-auto
-          p-6
-          space-y-8
-          "
-        >
-
-          <Section
-  icon={
-    <MapPinned
-      size={18}
-      className="text-[#1E4631]"
-    />
-  }
-  title="Recommended Places"
-  items={insights?.places}
-/>
-
-<Section
-  icon={
-    <Utensils
-      size={18}
-      className="text-[#1E4631]"
-    />
-  }
-  title="Food To Try"
-  items={insights?.food}
-/>
-
-<Section
-  icon={
-    <Backpack
-      size={18}
-      className="text-[#1E4631]"
-    />
-  }
-  title="Packing Tips"
-  items={insights?.packing}
-/>
-
-<Section
-  icon={
-    <CloudSun
-      size={18}
-      className="text-[#1E4631]"
-    />
-  }
-  title="Weather Notes"
-  items={insights?.weather}
-/>
-
-<Section
-  icon={
-    <AlertTriangle
-      size={18}
-      className="text-amber-500"
-    />
-  }
-  title="Travel Warnings"
-  items={insights?.warnings}
-/>
-
-        </div>
-
-      </motion.div>
-
-    </>
-
-     )}
-
-  </AnimatePresence>
-
+      )}
+    </AnimatePresence>,
+    document.body
   );
-
 };
 
 export default TravelInsightsDrawer;
