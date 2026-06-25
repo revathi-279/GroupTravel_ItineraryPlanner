@@ -1,96 +1,258 @@
-GROUP TRAVEL ITINERARY PLANNER
- - Create Trips 
- - Add members
- - Add polling
- - Split expenses
- - Share photos
+# Group Travel Itinerary Planner - Backend
 
-🧠 Proper Backend Development Order
+## Overview
 
-THIS is important.
+The backend of the Group Travel Itinerary Planner is built using Node.js, Express.js, and MongoDB. It provides REST APIs for authentication, trip management, itinerary planning, expense tracking, polling, notifications, settlements, and gallery management.
 
-✅ Phase 1 — Backend Initialization
+The system is designed to support collaborative trip planning where multiple users can manage a trip together, vote on decisions, track shared expenses, and maintain trip-related information in a single place.
 
-Learn:
+---
 
-Express server
-routing
-middleware basics
-nodemon
-environment variables
-✅ Phase 2 — MongoDB Connection
+## Tech Stack
 
-Learn:
+* Node.js
+* Express.js
+* MongoDB
+* Mongoose
+* JWT Authentication
+* Cloudinary
+* Multer
+* bcrypt
+* Cookie Parser
+* CORS
 
-mongoose
-schemas
-models
-database flow
-✅ Phase 3 — Architecture Setup
+---
 
-Create:
+## Features
 
-routes
-controllers
-middleware
-utilities
-✅ Phase 4 — Authentication
+### Authentication
 
-Build:
+* User registration
+* User login
+* User logout
+* JWT-based authentication
+* Profile update
+* Profile picture upload
+* Password update
 
-register
-login
-JWT
-protected routes
+---
 
-This is MOST important backend learning phase.
+### Trip Management
 
-✅ Phase 5 — Trip APIs
+* Create trip
+* Update trip
+* Delete trip
+* Get trip details
+* Search trips
+* Add members through invitations
+* Manage admins
 
-Build:
+---
 
-create trip
-fetch trips
-update trip
-delete trip
-✅ Phase 6 — Poll System APIs
-✅ Phase 7 — Expense APIs
-✅ Phase 8 — File Upload APIs
-🚀 COMPLETE PROJECT DEVELOPMENT ROADMAP
-🌱 Stage 1 — Planning
-define features
-define modules
-define user flow
-define architecture
-define database design
-🛠️ Stage 2 — Backend Foundation
-setup Express
-connect MongoDB
-structure backend
-🔐 Stage 3 — Authentication
-users
-JWT
-middleware
-✈️ Stage 4 — Core Trip Features
-trip CRUD
-itinerary
-members
-🗳️ Stage 5 — Collaboration Features
-polls
-voting
-notifications
-💰 Stage 6 — Expense Management
-balances
-calculations
-settlements
-🖼️ Stage 7 — Media Features
-uploads
-gallery
-🎨 Stage 8 — Frontend Integration
-React pages
-API calls
-UI state
-🚀 Stage 9 — Deployment & Polish
-hosting
-environment variables
-optimization
+### Itinerary Management
+
+* Create itinerary event
+* Update itinerary event
+* Delete itinerary event
+* View itinerary timeline
+* Mark itinerary status
+
+---
+
+### Expense Management
+
+* Create expense
+* Update expense
+* Delete expense
+* Split expenses among selected participants
+* Track individual balances
+* Settlement calculation
+
+---
+
+### Poll System
+
+* Create poll
+* Vote on poll
+* Delete poll
+* Update poll expiration time
+* View poll results
+
+---
+
+### Gallery
+
+* Upload images
+* Delete images
+* Emoji reactions on images
+* Trip-wise gallery management
+
+---
+
+### Notifications
+
+* Trip invitation notifications
+* Accept invitations
+* Reject invitations
+* Notification tracking
+
+---
+
+### Settlements
+
+* Automatic debt calculation
+* Settlement summary generation
+* Settlement status updates
+
+---
+
+## Project Structure
+
+backend/
+
+├── config/
+
+├── controllers/
+
+├── middlewares/
+
+├── models/
+
+├── routes/
+
+├── services/
+
+├── uploads/
+
+├── utils/
+
+├── app.js
+
+├── server.js
+
+└── package.json
+
+---
+
+## Environment Variables
+
+Create a `.env` file in the backend root directory.
+
+Required variables:
+
+PORT=
+
+MONGODB_URI=
+
+JWT_SECRET=
+
+CLIENT_URL=
+
+CLOUDINARY_CLOUD_NAME=
+
+CLOUDINARY_API_KEY=
+
+CLOUDINARY_API_SECRET=
+
+---
+
+## Installation
+
+Install dependencies:
+
+npm install
+
+Run development server:
+
+npm run dev
+
+Run production server:
+
+npm start
+
+---
+
+## API Modules
+
+### Auth APIs
+
+* Register
+* Login
+* Logout
+* Get Profile
+* Update Profile
+* Update Password
+* Upload Profile Picture
+
+### Trip APIs
+
+* Create Trip
+* Update Trip
+* Delete Trip
+* Get Trips
+* Get Trip Details
+* Search Trips
+
+### Itinerary APIs
+
+* Create Event
+* Update Event
+* Delete Event
+* Get Events
+
+### Expense APIs
+
+* Create Expense
+* Update Expense
+* Delete Expense
+* Get Expenses
+* Expense Summary
+
+### Poll APIs
+
+* Create Poll
+* Vote Poll
+* Delete Poll
+* Update Poll Expiry
+* Get Polls
+
+### Gallery APIs
+
+* Upload Image
+* Delete Image
+* Add Reaction
+
+### Notification APIs
+
+* Get Notifications
+* Accept Invitation
+* Reject Invitation
+
+### Settlement APIs
+
+* Get Settlements
+* Update Settlement Status
+
+---
+
+## Security
+
+* Password hashing using bcrypt
+* JWT authentication
+* Protected routes through middleware
+* Role-based admin checks
+* Input validation
+* Secure cookie handling
+
+---
+
+## Future Improvements
+
+* Real-time notifications
+* Real-time polling updates
+* Activity logs
+* Trip templates
+* Advanced analytics
+* Offline support
+
+Developed as a collaborative trip planning platform for managing itineraries, expenses, polls, galleries, and group coordination in a single application.
