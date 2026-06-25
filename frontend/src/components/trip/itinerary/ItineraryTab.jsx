@@ -72,14 +72,23 @@ const openDeleteModal = (itinerary) => {
     );
   }
 
-  if (!itineraries || itineraries.length === 0) {
-    return (
-      <EmptyItinerary 
-        onCreate={() => setShowCreateModal(true)} 
+ if (!itineraries || itineraries.length === 0) {
+  return (
+    <>
+      <EmptyItinerary
+        onCreate={() => setShowCreateModal(true)}
+        isAdmin={isAdmin}
       />
-    );
-  }
 
+      <CreateEventModal
+        open={showCreateModal}
+        trip={trip}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={fetchItineraries}
+      />
+    </>
+  );
+}
   // Sorting timeline items sequentially before running map indexing
   const sortedItineraries = [...itineraries].sort(
     (a, b) => new Date(a.dateTime) - new Date(b.dateTime)
